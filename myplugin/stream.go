@@ -1,16 +1,19 @@
 package myplugin
 
-import "danbing/plugin"
+import (
+	"danbing/plugin"
+	"fmt"
+)
 
 type StreamReader struct {
 }
 
 func (sr *StreamReader) Name() string {
-	return "streamReader"
+	return "streamreader"
 }
 
 func (sr *StreamReader) Split() {
-
+	fmt.Println("run plugin split")
 }
 
 func (sr *StreamReader) Reader() {
@@ -21,7 +24,7 @@ type StreamWriter struct {
 }
 
 func (sw *StreamWriter) Name() string {
-	return "streamWriter"
+	return "streamwriter"
 }
 
 func (sw *StreamWriter) Writer() {
