@@ -17,6 +17,7 @@ https://www.cnblogs.com/yjf512/p/16065604.html
 
 
 
+
 ## 思考
 1. datax数据 job, task, taskgroup结构以及用途
 datax基于配置体现数据,查看配置文件
@@ -63,3 +64,9 @@ datax基于配置体现数据,查看配置文件
 
 
 
+
+
+## 功能
+1. 插件加载功能
+2. 结构化配置文件
+3. 生成taskgroup流程
