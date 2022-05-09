@@ -14,14 +14,14 @@ type ReaderPlugin interface {
 	Init(*task.Query, *task.Connect)
 	Name() string
 	Split(taskNum int) []ReaderPlugin
-	Reader()
+	Reader() string
 }
 
 type WriterPlugin interface {
 	Name() string
 	Init(*task.Query, *task.Connect)
 	Split(taskNum int) []WriterPlugin
-	Writer()
+	Writer(s string)
 }
 
 var ReaderPlugins map[string]ReaderPlugin = make(map[string]ReaderPlugin)

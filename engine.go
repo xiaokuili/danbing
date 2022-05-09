@@ -3,8 +3,10 @@ package main
 import (
 	_ "danbing/myplugin"
 	"danbing/plugin"
+	recordchannel "danbing/recordChannel"
 	"danbing/task"
 	"fmt"
+	"sync"
 )
 
 type Job struct {
@@ -12,12 +14,41 @@ type Job struct {
 	Speed     *task.Speed   `json:"speed"`
 	Task      *Task         `json:"task,omitempty"`
 	Tasks     []*Task       `json:"tasks,omitempty"`
-	TaskGroup [][]*Task     `json:"taskgroup,omitempty"`
+	TaskGroup []*TaskGroup  `json:"taskgroup,omitempty"`
 }
 
 type Task struct {
-	Reader plugin.ReaderPlugin `json:"reader,omitempty"`
-	Writer plugin.WriterPlugin `json:"writer,omitempty"`
+	Reader plugin.ReaderPlugin  `json:"reader,omitempty"`
+	Writer plugin.WriterPlugin  `json:"writer,omitempty"`
+	Record recordchannel.Record ``
+}
+
+type TaskGroup struct {
+	Id    int
+	Tasks []*Task
+}
+
+func (t *Task) Run() {
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func(t *Task) {
+		defer wg.Done()
+		record := t.Reader.Reader()
+		t.Record.SetRecord([]byte(record))
+	}(t)
+
+	go func(t *Task) {
+		defer wg.Done()
+		record := t.Record.GetRecord()
+		t.Writer.Writer(string(record))
+	}(t)
+	wg.Wait()
+}
+
+func (tg *TaskGroup) Run() {
+	for i := 0; i < len(tg.Tasks); i++ {
+		tg.Tasks[i].Run()
+	}
 }
 
 // 基于配置文件生成job
@@ -25,18 +56,14 @@ func New() *Job {
 	// struct
 	// type struct 是声明
 	// 这里是实例化
-
+	// group := make([]*TaskGroup, 0)
 	j := &Job{
-		Param: []*task.Param{},
-		Speed: &task.Speed{},
-		Task: &Task{
-			Reader: nil,
-			Writer: nil,
-		},
+		Param:     []*task.Param{},
+		Speed:     &task.Speed{},
+		Task:      &Task{},
 		Tasks:     []*Task{},
-		TaskGroup: [][]*Task{},
+		TaskGroup: []*TaskGroup{},
 	}
-
 	return j
 }
 
@@ -45,9 +72,11 @@ func Temple() *Job {
 	job := New()
 	reader := &task.Param{
 		Connect: &task.Connect{},
-		Query:   &task.Query{},
-		Type:    task.READER,
-		Name:    "streamreader",
+		Query: &task.Query{
+			SQL: "hello world",
+		},
+		Type: task.READER,
+		Name: "streamreader",
 	}
 	job.Param = append(job.Param, reader)
 
@@ -64,7 +93,7 @@ func Temple() *Job {
 		BytePerChannel:   0,
 		Record:           0,
 		RecordPerChannel: 0,
-		Channel:          10,
+		Channel:          100,
 		Thread:           10,
 	}
 	return job
@@ -81,14 +110,17 @@ func (j *Job) CheckTaskExist() bool {
 
 func (j *Job) Init() {
 	param := j.Param
-	j.TaskGroup = make([][]*Task, j.Speed.Thread)
 	for i := 0; i < len(param); i++ {
 		p := param[i]
 		if p.Type == task.READER {
-			j.Task.Reader = plugin.ReaderPlugins[p.Name]
+			r := plugin.ReaderPlugins[p.Name]
+			r.Init(p.Query, p.Connect)
+			j.Task.Reader = r
 		}
 		if p.Type == task.WRITER {
-			j.Task.Writer = plugin.WriterPlugins[p.Name]
+			w := plugin.WriterPlugins[p.Name]
+			w.Init(p.Query, p.Connect)
+			j.Task.Writer = w
 		}
 
 	}
@@ -104,7 +136,7 @@ func (j *Job) Split() {
 	Rtask := t.Reader.Split(j.Speed.Channel)
 	Wtask := t.Writer.Split(len(Rtask))
 	j.MergeRWTask(Rtask, Wtask)
-	fmt.Println(Wtask)
+
 }
 
 func (j *Job) MergeRWTask(r []plugin.ReaderPlugin, w []plugin.WriterPlugin) {
@@ -120,26 +152,40 @@ func (j *Job) MergeRWTask(r []plugin.ReaderPlugin, w []plugin.WriterPlugin) {
 func (j *Job) GroupTask() {
 	threat := j.Speed.Thread
 	tasks := j.Tasks
+	group := make([]*TaskGroup, threat)
+	for i := 0; i < threat; i++ {
+
+		group[i] = &TaskGroup{
+			Id:    i,
+			Tasks: []*Task{},
+		}
+	}
 
 	for i := 0; i < len(tasks); i++ {
 		t := tasks[i]
+		t.Record = recordchannel.Record{
+			C: make(chan []byte),
+		}
 		gid := i % threat
-		j.TaskGroup[gid] = append(j.TaskGroup[gid], t)
+
+		group[gid].Tasks = append(group[gid].Tasks, t)
+
 	}
+	j.TaskGroup = group
 	fmt.Println("group task")
 }
 
 func (j *Job) Scheduler() {
 	group := j.TaskGroup
+	var wg sync.WaitGroup
+	wg.Add(len(group))
 	for i := 0; i < len(group); i++ {
-		tasks := group[i]
-		for j := 0; j < len(tasks); j++ {
-			t := tasks[j]
-			fmt.Printf("%d-%d is running...\n", i, j)
-			t.Reader.Reader()
-			t.Writer.Writer()
-		}
+		go func(group *TaskGroup) {
+			defer wg.Done()
+			group.Run()
+		}(group[i])
 	}
+	wg.Wait()
 	fmt.Println("scheduler")
 }
 

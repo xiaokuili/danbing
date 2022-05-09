@@ -25,9 +25,9 @@ func (sr *StreamReader) Split(taskNum int) []plugin.ReaderPlugin {
 	return plugins
 }
 
-func (sr *StreamReader) Reader() {
-	fmt.Printf("[reader]%s \n", sr.Name())
+func (sr *StreamReader) Reader() string {
 
+	return sr.Query.SQL
 }
 
 type StreamWriter struct {
@@ -49,9 +49,8 @@ func (sw *StreamWriter) Split(taskNum int) []plugin.WriterPlugin {
 	return plugins
 }
 
-func (sw *StreamWriter) Writer() {
-	fmt.Printf("[writer]%s\n", sw.Name())
-
+func (sw *StreamWriter) Writer(s string) {
+	fmt.Printf("save %s\n", s)
 }
 
 // TODO: init必须手动维护
