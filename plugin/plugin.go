@@ -1,15 +1,26 @@
 package plugin
 
-import "fmt"
+import (
+	"danbing/task"
+	"fmt"
+)
+
+const (
+	RPlugin = "reader"
+	WPlugin = "writer"
+)
 
 type ReaderPlugin interface {
+	Init(*task.Query, *task.Connect)
 	Name() string
-	Split()
+	Split(taskNum int) []ReaderPlugin
 	Reader()
 }
 
 type WriterPlugin interface {
 	Name() string
+	Init(*task.Query, *task.Connect)
+	Split(taskNum int) []WriterPlugin
 	Writer()
 }
 
