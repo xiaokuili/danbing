@@ -4,39 +4,49 @@
 
 
 ## datax 实现
-- 有点像插件的实现
+### 模块设计
+Communication: record static
+    - singleton: Map<Integer, Communication> taskGroupCommunicationMap = new ConcurrentHashMap<Integer, Communication>(); 
+    - updateTaskGroupCommunication(final int taskGroupId, final Communication communication)
+AbstractCollector: manage map[taskgroup]communication and map[job]communication  
+    -  private Map<Integer, Communication> taskCommunicationMap = new ConcurrentHashMap<Integer, Communication>();
+    -  getTGCommunication(Integer taskGroupId) -> taskGroupCommunicationMap
+
+AbstractContainerCommunicator
+    - attr:collector -> AbstractCollector
+    - collect()
+    - report()
+    - registerCommunication()
+
+
+### 流程
+1. 生成流程
 ```
-statistic
-    -- communication: 收集器数据及结构定义, counter, state, msg, throwable, timestamp,（单例？）
-    -- container: 收集器行为定义, 注册以及收集行为的实现
-        -- collect: 维护这样数据结构Map<Integer, Communication> 
-        -- communicator: 初始化collect, 然后将communicator实例扔进去
-            -- taskgroup: registerCommunication()
-            -- job
-    -- report: report函数实现
-
-collect 
-
-container
-    class: AbstractContainerCommunicator 
-
-```
-- 各个组件注册
-```
-// job
-// 初始化一个job的communicator
-tempContainerCollector = new StandAloneJobContainerCommunicator(configuration);
-super.setContainerCommunicator(tempContainerCollector);
-
-// scheduler
-// 处理一些
+//  1. init scheduler -> AloneJobContainerCommunicator(configuration)
+scheduler = initStandaloneScheduler(this.configuration);
 AbstractContainerCommunicator containerCommunicator = new StandAloneJobContainerCommunicator(configuration);
-super.setContainerCommunicator(containerCommunicator)
 
-// tg 
+// 2. register taskGroupContainer -> Communication.singleton
 this.containerCommunicator.registerCommunication(configurations);
 
-// task
-private TaskMonitor taskMonitor = TaskMonitor.getInstance();
+// 3. init taskgroup communication 
+initCommunicator(configuration);
+super.setContainerCommunicator(new StandaloneTGContainerCommunicator(configuration));
+
+// 4. register communication -> map[task]communication 
+this.containerCommunicator.registerCommunication(taskConfigs);
+
 
 ```
+2. 调用流程
+```
+// schedule, 剩下部分不展示
+// 1. collect job stat
+// 收集taskGroupCommunicationMap数据
+Communication nowJobContainerCommunication = this.containerCommunicator.collect();
+// 2. get report then report 
+Communication reportCommunication = CommunicationTool.getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
+
+this.containerCommunicator.report(reportCommunication);
+```
+
