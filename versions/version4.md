@@ -8,7 +8,7 @@
 ##### Communication: record static  
     - singleton: Map<Integer, Communication> taskGroupCommunicationMap = new ConcurrentHashMap<Integer, Communication>();   
     - updateTaskGroupCommunication(final int taskGroupId, final Communication communication)  
-##### AbstractCollector: manage map[taskgroup]communication and map[job]communication    
+##### AbstractCollector: manage **map[taskgroup]communication** and **map[job]communication**  
     -  private Map<Integer, Communication> taskCommunicationMap = new ConcurrentHashMap<Integer, Communication>();  
     -  getTGCommunication(Integer taskGroupId) -> taskGroupCommunicationMap  
 
