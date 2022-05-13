@@ -5,18 +5,18 @@
 
 ## datax 实现
 ### 模块设计
-Communication: record static
-    - singleton: Map<Integer, Communication> taskGroupCommunicationMap = new ConcurrentHashMap<Integer, Communication>(); 
-    - updateTaskGroupCommunication(final int taskGroupId, final Communication communication)
-AbstractCollector: manage map[taskgroup]communication and map[job]communication  
-    -  private Map<Integer, Communication> taskCommunicationMap = new ConcurrentHashMap<Integer, Communication>();
-    -  getTGCommunication(Integer taskGroupId) -> taskGroupCommunicationMap
+##### Communication: record static  
+    - singleton: Map<Integer, Communication> taskGroupCommunicationMap = new ConcurrentHashMap<Integer, Communication>();   
+    - updateTaskGroupCommunication(final int taskGroupId, final Communication communication)  
+##### AbstractCollector: manage map[taskgroup]communication and map[job]communication    
+    -  private Map<Integer, Communication> taskCommunicationMap = new ConcurrentHashMap<Integer, Communication>();  
+    -  getTGCommunication(Integer taskGroupId) -> taskGroupCommunicationMap  
 
-AbstractContainerCommunicator
-    - attr:collector -> AbstractCollector
-    - collect()
-    - report()
-    - registerCommunication()
+##### AbstractContainerCommunicator  
+    - attr:collector -> AbstractCollector  
+    - collect()  
+    - report()  
+    - registerCommunication()  
 
 
 ### 流程
@@ -50,3 +50,10 @@ Communication reportCommunication = CommunicationTool.getReportCommunication(now
 this.containerCommunicator.report(reportCommunication);
 ```
 
+## TODO
+1. package 
+   1. https://github.com/rcrowley/go-metrics
+2. 功能
+   1. 页面, Prometheus 
+3. 其他资料
+   1. https://talks.golang.org/2012/10things.slide#3 -> 比较简短的小的项目
