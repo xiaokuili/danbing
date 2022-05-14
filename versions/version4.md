@@ -5,14 +5,15 @@
 
 ## datax 实现
 ### 模块设计
-##### Communication: record static  
+注册容器数据结构和使用数据结构分离
+##### Communication:
     - singleton: Map<Integer, Communication> taskGroupCommunicationMap = new ConcurrentHashMap<Integer, Communication>();   
     - updateTaskGroupCommunication(final int taskGroupId, final Communication communication)  
 ##### AbstractCollector: manage **map[taskgroup]communication** and **map[job]communication**  
     -  private Map<Integer, Communication> taskCommunicationMap = new ConcurrentHashMap<Integer, Communication>();  
     -  getTGCommunication(Integer taskGroupId) -> taskGroupCommunicationMap  
 
-##### AbstractContainerCommunicator  
+##### AbstractContainerCommunicator: user Communication
     - attr:collector -> AbstractCollector  
     - collect()  
     - report()  
@@ -57,3 +58,6 @@ this.containerCommunicator.report(reportCommunication);
    1. 页面, Prometheus 
 3. 其他资料
    1. https://talks.golang.org/2012/10things.slide#3 -> 比较简短的小的项目
+4. 统计模块应该与结构无关
+5. job(one) -> tasks -> taskgroup -> run task
+6. 流量控制放到后面 
