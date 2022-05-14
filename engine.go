@@ -1,54 +1,23 @@
 package main
 
 import (
+	"danbing/cons"
 	_ "danbing/myplugin"
 	"danbing/plugin"
 	recordchannel "danbing/recordChannel"
+	statistic "danbing/statistics"
 	"danbing/task"
+	"danbing/taskgroup"
 	"fmt"
 	"sync"
 )
 
 type Job struct {
-	Param     []*task.Param `json:"job"`
-	Speed     *task.Speed   `json:"speed"`
-	Task      *Task         `json:"task,omitempty"`
-	Tasks     []*Task       `json:"tasks,omitempty"`
-	TaskGroup []*TaskGroup  `json:"taskgroup,omitempty"`
-}
-
-type Task struct {
-	Reader plugin.ReaderPlugin  `json:"reader,omitempty"`
-	Writer plugin.WriterPlugin  `json:"writer,omitempty"`
-	Record recordchannel.Record ``
-}
-
-type TaskGroup struct {
-	Id    int
-	Tasks []*Task
-}
-
-func (t *Task) Run() {
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go func(t *Task) {
-		defer wg.Done()
-		record := t.Reader.Reader()
-		t.Record.SetRecord([]byte(record))
-	}(t)
-
-	go func(t *Task) {
-		defer wg.Done()
-		record := t.Record.GetRecord()
-		t.Writer.Writer(string(record))
-	}(t)
-	wg.Wait()
-}
-
-func (tg *TaskGroup) Run() {
-	for i := 0; i < len(tg.Tasks); i++ {
-		tg.Tasks[i].Run()
-	}
+	Param     []*task.Param          `json:"job"`
+	Speed     *task.Speed            `json:"speed"`
+	Task      *taskgroup.Task        `json:"task,omitempty"`
+	Tasks     []*taskgroup.Task      `json:"tasks,omitempty"`
+	TaskGroup []*taskgroup.TaskGroup `json:"taskgroup,omitempty"`
 }
 
 // 基于配置文件生成job
@@ -60,9 +29,9 @@ func New() *Job {
 	j := &Job{
 		Param:     []*task.Param{},
 		Speed:     &task.Speed{},
-		Task:      &Task{},
-		Tasks:     []*Task{},
-		TaskGroup: []*TaskGroup{},
+		Task:      &taskgroup.Task{},
+		Tasks:     []*taskgroup.Task{},
+		TaskGroup: []*taskgroup.TaskGroup{},
 	}
 	return j
 }
@@ -93,8 +62,8 @@ func Temple() *Job {
 		BytePerChannel:   0,
 		Record:           0,
 		RecordPerChannel: 0,
-		Channel:          100,
-		Thread:           10,
+		Channel:          100, // task 数量
+		Thread:           10,  // threat group数量
 	}
 	return job
 }
@@ -141,9 +110,9 @@ func (j *Job) Split() {
 
 func (j *Job) MergeRWTask(r []plugin.ReaderPlugin, w []plugin.WriterPlugin) {
 
-	tasks := make([]*Task, 0)
+	tasks := make([]*taskgroup.Task, 0)
 	for i := 0; i < len(r); i++ {
-		t := &Task{Reader: r[i], Writer: w[i]}
+		t := &taskgroup.Task{Reader: r[i], Writer: w[i]}
 		tasks = append(tasks, t)
 	}
 	j.Tasks = tasks
@@ -152,12 +121,12 @@ func (j *Job) MergeRWTask(r []plugin.ReaderPlugin, w []plugin.WriterPlugin) {
 func (j *Job) GroupTask() {
 	threat := j.Speed.Thread
 	tasks := j.Tasks
-	group := make([]*TaskGroup, threat)
+	group := make([]*taskgroup.TaskGroup, threat)
 	for i := 0; i < threat; i++ {
 
-		group[i] = &TaskGroup{
-			Id:    i,
-			Tasks: []*Task{},
+		group[i] = &taskgroup.TaskGroup{
+			ID:    i,
+			Tasks: []*taskgroup.Task{},
 		}
 	}
 
@@ -176,17 +145,26 @@ func (j *Job) GroupTask() {
 }
 
 func (j *Job) Scheduler() {
+	communication := statistic.SingletonNew()
+
 	group := j.TaskGroup
 	var wg sync.WaitGroup
 	wg.Add(len(group))
 	for i := 0; i < len(group); i++ {
-		go func(group *TaskGroup) {
+		gtask := group[i]
+		tgCommunication := statistic.New(gtask.ID, cons.STAGETASKGROUP)
+		tgCommunication.Metric.IncreaseCounter("taskgroup_count")
+		gtask.Communication = tgCommunication
+		communication.Build(tgCommunication)
+
+		go func(group *taskgroup.TaskGroup) {
 			defer wg.Done()
 			group.Run()
 		}(group[i])
 	}
 	wg.Wait()
-	fmt.Println("scheduler")
+	communication.Report()
+
 }
 
 func main() {
