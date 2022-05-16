@@ -44,8 +44,14 @@ func (reader *PgReader) Name() string {
 
 func (reader *PgReader) Split(taskNum int) []plugin.ReaderPlugin {
 	plugins := make([]plugin.ReaderPlugin, 0)
+	sqlbase := reader.Query.SQL
+
 	for i := 0; i < taskNum; i++ {
+
 		reader.Query.Offset = i * reader.Query.Size
+		sql := fmt.Sprintf("%s offset %d limit %d;", sqlbase, reader.Query.Offset, reader.Query.Size)
+		fmt.Println(sql)
+		reader.Query.SQL = sql
 		plugins = append(plugins, reader)
 	}
 	return plugins

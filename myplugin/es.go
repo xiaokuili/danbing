@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strconv"
 
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
@@ -17,6 +16,7 @@ import (
 type EsWriter struct {
 	cli     *elasticsearch.Client
 	Connect *task.Connect
+	Query   *task.Query
 }
 
 func (writer *EsWriter) Init(tq *task.Query, tc *task.Connect) {
@@ -41,6 +41,7 @@ func (writer *EsWriter) Init(tq *task.Query, tc *task.Connect) {
 
 	}
 	writer.cli = cli
+	writer.Query = tq
 }
 
 func (writer *EsWriter) Name() string {
@@ -59,21 +60,40 @@ func (writer *EsWriter) Close() {
 
 }
 
+func toStr(i interface{}) string {
+	switch t := i.(type) {
+	case string:
+		return t
+	}
+	return ""
+}
+
 func (writer *EsWriter) Writer(s string) {
 	result := make([]map[string]interface{}, 0)
 	err := json.Unmarshal([]byte(s), &result)
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	for i := 0; i < len(result); i++ {
 		d := result[i]
+		var docID string
+		for i := 0; i < len(writer.Query.Columns); i++ {
+			c := writer.Query.Columns[i]
+			if c.PrimaryField {
+				docID = docID + toStr(d[c.Name])
+			}
+
+		}
+
 		data, err := json.Marshal(d)
 		if err != nil {
 			fmt.Println(err)
 		}
+
 		req := esapi.IndexRequest{
-			Index:      "danbing",
-			DocumentID: strconv.Itoa(i + 1),
+			Index:      writer.Query.Table,
+			DocumentID: docID,
 			Body:       bytes.NewReader(data),
 			Refresh:    "true",
 		}
