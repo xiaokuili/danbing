@@ -15,13 +15,15 @@ type Column struct {
 }
 
 type Query struct {
-	SQL     string    `json:"sql"`
+	SQL     string `json:"sql"`
+	Size    int
+	Offset  int
 	Table   string    `json:"table"`
 	Columns []*Column `json:"columns"`
 }
 
 type Connect struct {
-	Host     string `json:"host"`
+	URL      string `json:"url"` // host: port
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Database string `json:"database"`

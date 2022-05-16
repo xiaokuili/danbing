@@ -15,6 +15,7 @@ type ReaderPlugin interface {
 	Name() string
 	Split(taskNum int) []ReaderPlugin
 	Reader() string
+	Close()
 }
 
 type WriterPlugin interface {
@@ -22,6 +23,7 @@ type WriterPlugin interface {
 	Init(*task.Query, *task.Connect)
 	Split(taskNum int) []WriterPlugin
 	Writer(s string)
+	Close()
 }
 
 var ReaderPlugins map[string]ReaderPlugin = make(map[string]ReaderPlugin)

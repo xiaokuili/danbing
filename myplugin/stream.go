@@ -25,6 +25,9 @@ func (sr *StreamReader) Split(taskNum int) []plugin.ReaderPlugin {
 	return plugins
 }
 
+func (sr *StreamReader) Close() {
+
+}
 func (sr *StreamReader) Reader() string {
 
 	return sr.Query.SQL
@@ -47,6 +50,10 @@ func (sw *StreamWriter) Split(taskNum int) []plugin.WriterPlugin {
 		plugins = append(plugins, sw)
 	}
 	return plugins
+}
+
+func (sw *StreamWriter) Close() {
+
 }
 
 func (sw *StreamWriter) Writer(s string) {

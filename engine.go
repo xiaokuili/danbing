@@ -68,6 +68,43 @@ func Temple() *Job {
 	return job
 }
 
+func PG2ESTemple() *Job {
+
+	job := New()
+	reader := &task.Param{
+		Connect: &task.Connect{
+			URL:      "127.0.0.1:5432",
+			Username: "postgres",
+			Password: "postgres",
+			Database: "postgres",
+		},
+		Query: &task.Query{
+			SQL: "select * from danbing",
+		},
+		Type: task.READER,
+		Name: "pgsqlreader",
+	}
+	job.Param = append(job.Param, reader)
+
+	writer := &task.Param{
+		Connect: &task.Connect{},
+		Query:   &task.Query{},
+		Type:    task.WRITER,
+		Name:    "streamwriter",
+	}
+	job.Param = append(job.Param, writer)
+
+	job.Speed = &task.Speed{
+		Byte:             0,
+		BytePerChannel:   0,
+		Record:           0,
+		RecordPerChannel: 0,
+		Channel:          100, // task 数量
+		Thread:           10,  // threat group数量
+	}
+	return job
+}
+
 // 不存在返回false
 func (j *Job) CheckTaskExist() bool {
 	t := j.Task
@@ -169,7 +206,7 @@ func (j *Job) Scheduler() {
 
 func main() {
 
-	j := Temple()
+	j := PG2ESTemple()
 	j.Init()
 	j.Split()
 	j.GroupTask()
