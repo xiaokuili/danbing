@@ -50,3 +50,16 @@ INSERT INTO danbing VALUES (20, 20);
 // search 
 select * from danbing ;
 ```
+
+es
+```
+curl -X GET "localhost:9200/danbing/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "match_all": { }
+  },
+  "size": 30
+}
+'
+
+```

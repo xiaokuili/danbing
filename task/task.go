@@ -23,7 +23,8 @@ type Query struct {
 }
 
 type Connect struct {
-	URL      string `json:"url"` // host: port
+	Host     string `json:"host"` // host: port
+	Port     int    `json:"port"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Database string `json:"database"`

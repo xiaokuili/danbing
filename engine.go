@@ -73,7 +73,8 @@ func PG2ESTemple() *Job {
 	job := New()
 	reader := &task.Param{
 		Connect: &task.Connect{
-			URL:      "127.0.0.1:5432",
+			Host:     "127.0.0.1",
+			Port:     5432,
 			Username: "postgres",
 			Password: "postgres",
 			Database: "postgres",
@@ -87,10 +88,15 @@ func PG2ESTemple() *Job {
 	job.Param = append(job.Param, reader)
 
 	writer := &task.Param{
-		Connect: &task.Connect{},
-		Query:   &task.Query{},
-		Type:    task.WRITER,
-		Name:    "streamwriter",
+		Connect: &task.Connect{
+			Host:     "127.0.0.1",
+			Port:     9200,
+			Username: "",
+			Password: "",
+		},
+		Query: &task.Query{},
+		Type:  task.WRITER,
+		Name:  "eswriter",
 	}
 	job.Param = append(job.Param, writer)
 
@@ -99,8 +105,8 @@ func PG2ESTemple() *Job {
 		BytePerChannel:   0,
 		Record:           0,
 		RecordPerChannel: 0,
-		Channel:          100, // task 数量
-		Thread:           10,  // threat group数量
+		Channel:          5, // task 数量
+		Thread:           5, // threat group数量
 	}
 	return job
 }
