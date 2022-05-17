@@ -20,22 +20,25 @@ type TaskGroup struct {
 	ID            int
 	Tasks         []*Task
 	Communication *statistic.Communication
+	Table         string
 }
 
 func (t *Task) Run() {
 	var wg sync.WaitGroup
+	t.Record.Communication = t.Communication
+
 	wg.Add(2)
 	go func(t *Task) {
 		defer wg.Done()
 		record := t.Reader.Reader()
-		t.Communication.Metric.IncreaseCounter("taskReader")
+
 		t.Record.SetRecord([]byte(record))
 	}(t)
 
 	go func(t *Task) {
 		defer wg.Done()
 		record := t.Record.GetRecord()
-		t.Communication.Metric.IncreaseCounter("taskWriter")
+
 		t.Writer.Writer(string(record))
 	}(t)
 	wg.Wait()
@@ -43,7 +46,7 @@ func (t *Task) Run() {
 
 func (tg *TaskGroup) Run() {
 	for i := 0; i < len(tg.Tasks); i++ {
-		communication := statistic.New(i, cons.STAGETASK)
+		communication := statistic.New(i, cons.STAGETASK, tg.Table)
 		tg.Communication.Build(communication)
 		t := tg.Tasks[i]
 		t.Communication = communication

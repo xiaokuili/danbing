@@ -23,8 +23,8 @@ type Communication struct {
 	Child  []*Communication
 	ID     int
 	Metric *Metric
-
-	Name string
+	Table  string
+	Name   string
 }
 
 var C *Communication = &Communication{}
@@ -48,7 +48,7 @@ func SingletonNew() *Communication {
 	return Instance
 }
 
-func New(id int, name string) *Communication {
+func New(id int, name, table string) *Communication {
 
 	return &Communication{
 		ID:    id,
@@ -74,6 +74,7 @@ func (c *Communication) Collect() *Metric {
 
 func (c *Communication) Report() {
 	m := c.Collect()
+
 	Collects[c.Name].Report(m)
 }
 
@@ -83,6 +84,9 @@ func (c *Communication) Build(newC *Communication) {
 
 func (c *Communication) IncreaseCounter(key string) {
 	c.Metric.IncreaseCounter(key)
+}
+func (c *Communication) AddCounter(key string, value int) {
+	c.Metric.AddCounter(key, value)
 }
 
 type TaskGroupCommunicator struct {

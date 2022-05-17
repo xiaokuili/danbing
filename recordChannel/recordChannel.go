@@ -1,9 +1,14 @@
 package recordchannel
 
-import "time"
+import (
+	statistic "danbing/statistics"
+	"time"
+)
 
 type Record struct {
 	C chan []byte
+
+	Communication *statistic.Communication
 }
 
 func (r *Record) GetRecord() []byte {
@@ -21,5 +26,8 @@ func (r *Record) GetRecord() []byte {
 }
 
 func (r *Record) SetRecord(record []byte) {
+	r.Communication.AddCounter("byteSize", len(record))
+	r.Communication.IncreaseCounter("recordcount")
 	r.C <- record
+
 }

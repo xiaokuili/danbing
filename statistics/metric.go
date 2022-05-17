@@ -75,6 +75,12 @@ func (c *Metric) IncreaseCounter(key string) {
 	c.Counter[key] = c.Counter[key] + 1
 }
 
+func (c *Metric) AddCounter(key string, value int) {
+	c.Lock()
+	defer c.Unlock()
+	c.Counter[key] = c.Counter[key] + value
+}
+
 func (c *Metric) MergeFrom(final *Metric) {
 	c.Lock()
 	defer c.Unlock()

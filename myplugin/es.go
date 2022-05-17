@@ -85,6 +85,7 @@ func (writer *EsWriter) Writer(s string) {
 			}
 
 		}
+		fmt.Println(docID)
 
 		data, err := json.Marshal(d)
 		if err != nil {

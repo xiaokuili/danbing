@@ -18,6 +18,7 @@ type Job struct {
 	Task      *taskgroup.Task        `json:"task,omitempty"`
 	Tasks     []*taskgroup.Task      `json:"tasks,omitempty"`
 	TaskGroup []*taskgroup.TaskGroup `json:"taskgroup,omitempty"`
+	Table     string
 }
 
 // 基于配置文件生成job
@@ -53,7 +54,7 @@ func Temple() *Job {
 		Connect: &task.Connect{},
 		Query:   &task.Query{},
 		Type:    task.WRITER,
-		Name:    "streamwriter",
+		Name:    "eswriter",
 	}
 	job.Param = append(job.Param, writer)
 
@@ -80,11 +81,14 @@ func PG2ESTemple() *Job {
 			Database: "postgres",
 		},
 		Query: &task.Query{
-			SQL: "select * from danbing",
+			SQL:   "select * from danbing",
+			Size:  10,
+			Table: "danbing",
 		},
 		Type: task.READER,
 		Name: "pgsqlreader",
 	}
+
 	job.Param = append(job.Param, reader)
 
 	writer := &task.Param{
@@ -96,10 +100,10 @@ func PG2ESTemple() *Job {
 		},
 		Query: &task.Query{},
 		Type:  task.WRITER,
-		Name:  "eswriter",
+		Name:  "streamwriter",
 	}
 	job.Param = append(job.Param, writer)
-
+	job.Table = "danbing"
 	job.Speed = &task.Speed{
 		Byte:             0,
 		BytePerChannel:   0,
@@ -165,11 +169,12 @@ func (j *Job) GroupTask() {
 	threat := j.Speed.Thread
 	tasks := j.Tasks
 	group := make([]*taskgroup.TaskGroup, threat)
-	for i := 0; i < threat; i++ {
 
+	for i := 0; i < threat; i++ {
 		group[i] = &taskgroup.TaskGroup{
 			ID:    i,
 			Tasks: []*taskgroup.Task{},
+			Table: j.Table,
 		}
 	}
 
@@ -195,8 +200,8 @@ func (j *Job) Scheduler() {
 	wg.Add(len(group))
 	for i := 0; i < len(group); i++ {
 		gtask := group[i]
-		tgCommunication := statistic.New(gtask.ID, cons.STAGETASKGROUP)
-		tgCommunication.Metric.IncreaseCounter("taskgroup_count")
+		tgCommunication := statistic.New(gtask.ID, cons.STAGETASKGROUP, j.Table)
+
 		gtask.Communication = tgCommunication
 		communication.Build(tgCommunication)
 

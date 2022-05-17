@@ -9,7 +9,7 @@
 
 ## pg
 ```
-// docker exec -it 
+// docker exec -it docker_pg_1 /bin/sh
 psql -U postgres -h 127.0.0.1
 
 // create table 

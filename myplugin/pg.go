@@ -9,6 +9,7 @@ import (
 	"database/sql"
 
 	_ "github.com/lib/pq"
+	"github.com/mohae/deepcopy"
 )
 
 type PgReader struct {
@@ -37,9 +38,19 @@ func (reader *PgReader) Init(tq *task.Query, tc *task.Connect) {
 	pool.SetMaxOpenConns(3)
 	reader.db = pool
 	reader.Query = tq
+
 }
 func (reader *PgReader) Name() string {
 	return "pgsqlreader"
+}
+
+func (reader *PgReader) Copy() *PgReader {
+	new := deepcopy.Copy(reader)
+	p, ok := new.(*PgReader)
+	if !ok {
+		fmt.Println("")
+	}
+	return p
 }
 
 func (reader *PgReader) Split(taskNum int) []plugin.ReaderPlugin {
@@ -47,12 +58,14 @@ func (reader *PgReader) Split(taskNum int) []plugin.ReaderPlugin {
 	sqlbase := reader.Query.SQL
 
 	for i := 0; i < taskNum; i++ {
+		new := reader.Copy()
 
-		reader.Query.Offset = i * reader.Query.Size
-		sql := fmt.Sprintf("%s offset %d limit %d;", sqlbase, reader.Query.Offset, reader.Query.Size)
-		fmt.Println(sql)
-		reader.Query.SQL = sql
-		plugins = append(plugins, reader)
+		new.Query.Offset = i * reader.Query.Size
+		sql := fmt.Sprintf("%s offset %d limit %d", sqlbase, new.Query.Offset, reader.Query.Size)
+		// sql := sqlbase
+
+		new.Query.SQL = sql
+		plugins = append(plugins, new)
 	}
 	return plugins
 }
