@@ -50,6 +50,7 @@ func (reader *PgReader) Copy() *PgReader {
 	if !ok {
 		fmt.Println("")
 	}
+	p.db = reader.db
 	return p
 }
 
