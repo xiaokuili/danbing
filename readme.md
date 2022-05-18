@@ -8,12 +8,15 @@ dangbing内网数据同步工具，同时有简单的数据处理模块
 - 自动调节传输速度
 
 ## danbing vs datax
-1. danbing只需要配置数据传输必要信息，不需要配置速度，danbing会自动调节速度，尽可能缩减传输时间
+- danbing只需要配置数据传输必要信息，不需要配置速度，danbing会自动调节速度，尽可能缩减传输时间
 
 ## qucikstart
+```
 cd example
+```
+```
 go test 
-
+```
 ```
 package engine_test
 
