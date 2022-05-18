@@ -1,6 +1,9 @@
 package conf
 
-import "danbing/cons"
+import (
+	"danbing/cons"
+	"fmt"
+)
 
 // 字段
 type Column struct {
@@ -8,6 +11,7 @@ type Column struct {
 	Name         string `json:"name"`
 	WhereField   bool   `json:"where_field"`   // update
 	PrimaryField bool   `json:"primary_field"` // upsert
+	CollectField bool
 }
 
 type Query struct {
@@ -47,7 +51,7 @@ func NewReader(name string) *Param {
 		Connect: &Connect{},
 		Query:   &Query{},
 		Name:    name,
-		Type:    cons.CONfREADER,
+		Type:    cons.PLUGINREADER,
 	}
 	return reader
 }
@@ -58,4 +62,23 @@ func (p *Param) SetConnect(c *Connect) {
 
 func (p *Param) SetQuery(q *Query) {
 	p.Query = q
+}
+
+func getParam(ps []*Param, t string) (*Param, error) {
+	for i := 0; i < len(ps); i++ {
+		p := ps[i]
+
+		if p.Type == t {
+			return p, nil
+		}
+	}
+	return nil, fmt.Errorf("not exist %s param ", t)
+}
+
+func ReaderParam(ps []*Param) (*Param, error) {
+	return getParam(ps, cons.PLUGINREADER)
+}
+
+func WriterParam(ps []*Param) (*Param, error) {
+	return getParam(ps, cons.PLUGINWRITER)
 }

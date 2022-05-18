@@ -7,14 +7,20 @@ import (
 	"danbing/job"
 )
 
-func Example_Engine() {
+func streamJob() *job.Job {
 	job := job.New("danbing")
+	c := make([]*conf.Column, 0)
+	c = append(c, &conf.Column{
+		Name:         "out",
+		CollectField: true, // 收集这个字段的最后一条数据
+	})
 	reader := &conf.Param{
 		Connect: &conf.Connect{},
 		Query: &conf.Query{
-			SQL: "hello world",
+			SQL:     "hello world",
+			Columns: c,
 		},
-		Type: cons.CONfREADER,
+		Type: cons.PLUGINREADER,
 		Name: "streamreader",
 	}
 	job.SetReaderParam(reader)
@@ -22,7 +28,7 @@ func Example_Engine() {
 	writer := &conf.Param{
 		Connect: &conf.Connect{},
 		Query:   &conf.Query{},
-		Type:    cons.CONfWRITER,
+		Type:    cons.PLUGINWRITER,
 		Name:    "streamwriter",
 	}
 	job.SetWriterParam(writer)
@@ -35,6 +41,11 @@ func Example_Engine() {
 		Thread:           10, // threat group数量
 	}
 	job.SetSpeed(speed)
+	return job
+}
+
+func Example_Engine() {
+	job := streamJob()
 	engine.Engine(job)
 
 	// Output:
@@ -49,4 +60,23 @@ func Example_Engine() {
 	// hello world
 	// hello world
 
+}
+
+func Example_Engine_Report() {
+	job := streamJob()
+	engine.EngineReport(job)
+
+	// Output:
+	// hello world
+	// hello world
+	// hello world
+	// hello world
+	// hello world
+	// hello world
+	// hello world
+	// hello world
+	// hello world
+	// hello world
+	// map[byteSize:10 recordcount:10]
+	// map[out:hello world]
 }

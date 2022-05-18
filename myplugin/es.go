@@ -68,12 +68,7 @@ func toStr(i interface{}) string {
 	return ""
 }
 
-func (writer *EsWriter) Writer(s string) {
-	result := make([]map[string]interface{}, 0)
-	err := json.Unmarshal([]byte(s), &result)
-	if err != nil {
-		fmt.Println(err)
-	}
+func (writer *EsWriter) Writer(result []map[string]interface{}) {
 
 	for i := 0; i < len(result); i++ {
 		d := result[i]

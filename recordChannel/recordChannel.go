@@ -6,19 +6,19 @@ import (
 )
 
 type Record struct {
-	C chan []byte
+	C chan []map[string]interface{}
 
 	Communication *statistic.Communication
 }
 
 func New(communication *statistic.Communication) *Record {
 	return &Record{
-		C:             make(chan []byte),
+		C:             make(chan []map[string]interface{}),
 		Communication: communication,
 	}
 }
 
-func (r *Record) GetRecord() []byte {
+func (r *Record) GetRecord() []map[string]interface{} {
 	aliveTime := time.Hour * 3
 	t := time.NewTicker(aliveTime)
 	for {
@@ -32,7 +32,7 @@ func (r *Record) GetRecord() []byte {
 	}
 }
 
-func (r *Record) SetRecord(record []byte) {
+func (r *Record) PutRecord(record []map[string]interface{}) {
 	r.Communication.AddCounter("byteSize", len(record))
 	r.Communication.IncreaseCounter("recordcount")
 	r.C <- record

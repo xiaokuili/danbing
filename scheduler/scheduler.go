@@ -31,7 +31,7 @@ func New(job *job.Job) *Scheduler {
 func (s *Scheduler) Persister() {}
 
 func InitReader(p *conf.Param) plugin.ReaderPlugin {
-	if p.Type != cons.CONfREADER {
+	if p.Type != cons.PLUGINREADER {
 		panic("please check plugin is reader")
 	}
 	r := plugin.ReaderPlugins[p.Name]
@@ -40,7 +40,7 @@ func InitReader(p *conf.Param) plugin.ReaderPlugin {
 }
 
 func InitWriter(p *conf.Param) plugin.WriterPlugin {
-	if p.Type != cons.CONfWRITER {
+	if p.Type != cons.PLUGINWRITER {
 		panic("please check plugin is writer")
 	}
 	w := plugin.WriterPlugins[p.Name]
@@ -54,9 +54,9 @@ func (s *Scheduler) Init() *taskgroup.Task {
 	for i := 0; i < len(param); i++ {
 		p := param[i]
 		switch p.Type {
-		case cons.CONfREADER:
+		case cons.PLUGINREADER:
 			genesis.Reader = InitReader(p)
-		case cons.CONfWRITER:
+		case cons.PLUGINWRITER:
 			genesis.Writer = InitWriter(p)
 		}
 	}
@@ -78,6 +78,16 @@ func (s *Scheduler) MergeRWTask(r []plugin.ReaderPlugin, w []plugin.WriterPlugin
 	tasks := make([]*taskgroup.Task, 0)
 	for i := 0; i < len(r); i++ {
 		t := taskgroup.NewTask(i, s.Table, r[i], w[i])
+		rp, err := conf.ReaderParam(s.Job.Param)
+		if err != nil {
+			panic("")
+		}
+		t.SetReaderParam(rp)
+		wp, err := conf.WriterParam(s.Job.Param)
+		if err != nil {
+			panic("")
+		}
+		t.SetWriterParam(wp)
 		tasks = append(tasks, t)
 	}
 	return tasks

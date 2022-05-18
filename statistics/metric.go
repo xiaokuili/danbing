@@ -69,6 +69,12 @@ func (c *Metric) GetMessage(key string) (string, error) {
 	return "", errors.New("cant find msg value")
 }
 
+func (c *Metric) SetMessage(key, value string) {
+	c.Lock()
+	defer c.Unlock()
+	c.Message[key] = value
+}
+
 func (c *Metric) IncreaseCounter(key string) {
 	c.Lock()
 	defer c.Unlock()

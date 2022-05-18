@@ -14,7 +14,7 @@ type ReaderPlugin interface {
 	Init(*conf.Query, *conf.Connect)
 	Name() string
 	Split(taskNum int) []ReaderPlugin
-	Reader() string
+	Reader() []map[string]interface{}
 	Close()
 }
 
@@ -22,7 +22,7 @@ type WriterPlugin interface {
 	Name() string
 	Init(*conf.Query, *conf.Connect)
 	Split(taskNum int) []WriterPlugin
-	Writer(s string)
+	Writer([]map[string]interface{})
 	Close()
 }
 

@@ -5,6 +5,6 @@ var (
 	STAGETASKGROUP = "taskgroup"
 	STAGETASK      = "task"
 
-	CONfREADER = "reader"
-	CONfWRITER = "writer"
+	PLUGINWRITER = "writer"
+	PLUGINREADER = "reader"
 )

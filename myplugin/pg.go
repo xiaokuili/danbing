@@ -3,7 +3,6 @@ package myplugin
 import (
 	"danbing/conf"
 	"danbing/plugin"
-	"encoding/json"
 	"fmt"
 
 	"database/sql"
@@ -71,8 +70,8 @@ func (reader *PgReader) Split(taskNum int) []plugin.ReaderPlugin {
 	return plugins
 }
 
-func (reader *PgReader) Reader() string {
-	result := make([]map[string]string, 0)
+func (reader *PgReader) Reader() []map[string]interface{} {
+	result := make([]map[string]interface{}, 0)
 
 	rows, err := reader.db.Query(reader.Query.SQL)
 	if err != nil {
@@ -88,15 +87,14 @@ func (reader *PgReader) Reader() string {
 				buff[i] = &data[i]
 			}
 			rows.Scan(buff...)
-			dataKv := make(map[string]string)
+			dataKv := make(map[string]interface{})
 			for k, col := range data {
 				dataKv[cols[k]] = string(col)
 			}
 			result = append(result, dataKv)
 		}
 	}
-	s, _ := json.Marshal(result)
-	return string(s)
+	return result
 }
 
 func (reader *PgReader) Close() {

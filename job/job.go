@@ -53,7 +53,7 @@ func (j *Job) SetReaderParam(p *conf.Param) {
 	if j.setParam(p) {
 		return
 	}
-	if j.Param[0].Type != cons.CONfREADER {
+	if j.Param[0].Type != cons.PLUGINREADER {
 		j.Param = append(j.Param, p)
 	}
 }
@@ -62,7 +62,7 @@ func (j *Job) SetWriterParam(p *conf.Param) {
 	if j.setParam(p) {
 		return
 	}
-	if j.Param[0].Type != cons.CONfWRITER {
+	if j.Param[0].Type != cons.PLUGINWRITER {
 		j.Param = append(j.Param, p)
 	}
 }

@@ -1,19 +1,23 @@
 package taskgroup
 
 import (
+	"danbing/conf"
 	"danbing/cons"
 	"danbing/plugin"
 	recordchannel "danbing/recordChannel"
 	statistic "danbing/statistics"
+	"fmt"
 	"sync"
 )
 
 type Task struct {
 	ID            int
-	Reader        plugin.ReaderPlugin   `json:"reader,omitempty"`
-	Writer        plugin.WriterPlugin   `json:"writer,omitempty"`
-	Record        *recordchannel.Record ``
+	Reader        plugin.ReaderPlugin `json:"reader,omitempty"`
+	Writer        plugin.WriterPlugin `json:"writer,omitempty"`
+	Record        *recordchannel.Record
 	Communication *statistic.Communication
+	ReaderParam   *conf.Param
+	WriterParam   *conf.Param
 }
 
 func (t *Task) CheckTask() bool {
@@ -30,6 +34,21 @@ func NewTask(id int, table string, reader plugin.ReaderPlugin, writer plugin.Wri
 		Communication: communication,
 	}
 }
+func (t *Task) SetReaderParam(p *conf.Param) {
+	t.ReaderParam = p
+}
+
+func (t *Task) SetWriterParam(p *conf.Param) {
+	t.WriterParam = p
+}
+
+func toString(i interface{}) string {
+	r, ok := i.(string)
+	if !ok {
+		panic(fmt.Errorf("%v cant change to string", i))
+	}
+	return r
+}
 
 func (t *Task) Run() {
 	var wg sync.WaitGroup
@@ -38,13 +57,29 @@ func (t *Task) Run() {
 	go func(t *Task) {
 		defer wg.Done()
 		record := t.Reader.Reader()
-		t.Record.SetRecord([]byte(record))
+		// 在这里基于字段进行收集
+		if len(record) > 0 {
+			columns := t.ReaderParam.Query.Columns
+
+			r := record[len(record)-1]
+			for i := 0; i < len(columns); i++ {
+				field := columns[i]
+				if field.CollectField {
+					name := field.Name
+					t.Communication.Metric.SetMessage(name, toString(r[name]))
+
+				}
+			}
+
+		}
+		t.Record.PutRecord(record)
 	}(t)
 
 	go func(t *Task) {
 		defer wg.Done()
 		record := t.Record.GetRecord()
-		t.Writer.Writer(string(record))
+		// 在这里基于字段进行收集
+		t.Writer.Writer(record)
 	}(t)
 	wg.Wait()
 }

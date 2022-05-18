@@ -14,3 +14,12 @@ func Engine(job *job.Job) {
 	scheduelr.Scheduler()
 	// scheduelr.Report()
 }
+
+func EngineReport(job *job.Job) {
+	scheduelr := scheduler.New(job)
+	genesis := scheduelr.Init()
+	tasks := scheduelr.Split(genesis)
+	scheduelr.GroupTasks(tasks)
+	scheduelr.Scheduler()
+	scheduelr.Report()
+}
