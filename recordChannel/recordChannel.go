@@ -11,6 +11,13 @@ type Record struct {
 	Communication *statistic.Communication
 }
 
+func New(communication *statistic.Communication) *Record {
+	return &Record{
+		C:             make(chan []byte),
+		Communication: communication,
+	}
+}
+
 func (r *Record) GetRecord() []byte {
 	aliveTime := time.Hour * 3
 	t := time.NewTicker(aliveTime)

@@ -1,7 +1,7 @@
 package plugin
 
 import (
-	"danbing/task"
+	"danbing/conf"
 	"fmt"
 )
 
@@ -11,7 +11,7 @@ const (
 )
 
 type ReaderPlugin interface {
-	Init(*task.Query, *task.Connect)
+	Init(*conf.Query, *conf.Connect)
 	Name() string
 	Split(taskNum int) []ReaderPlugin
 	Reader() string
@@ -20,7 +20,7 @@ type ReaderPlugin interface {
 
 type WriterPlugin interface {
 	Name() string
-	Init(*task.Query, *task.Connect)
+	Init(*conf.Query, *conf.Connect)
 	Split(taskNum int) []WriterPlugin
 	Writer(s string)
 	Close()

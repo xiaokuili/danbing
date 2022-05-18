@@ -1,17 +1,13 @@
-package task
+package conf
 
-const (
-	READER = "reader"
-	WRITER = "writer"
-)
+import "danbing/cons"
 
 // 字段
 type Column struct {
-	Type         string `json:"type"`
 	Value        string `json:"value"`
 	Name         string `json:"name"`
-	WhereField   bool   `json:"where_field"`
-	PrimaryField bool   `json:"primary_field"`
+	WhereField   bool   `json:"where_field"`   // update
+	PrimaryField bool   `json:"primary_field"` // upsert
 }
 
 type Query struct {
@@ -42,6 +38,24 @@ type Speed struct {
 type Param struct {
 	Connect *Connect `json:"connect"`
 	Query   *Query   `json:"query"`
-	Name    string   `json:"name"`
-	Type    string   `json:"type"`
+	Name    string   `json:"name"` // reader or writer name
+	Type    string   `json:"type"` // reader type or writer type
+}
+
+func NewReader(name string) *Param {
+	reader := &Param{
+		Connect: &Connect{},
+		Query:   &Query{},
+		Name:    name,
+		Type:    cons.CONfREADER,
+	}
+	return reader
+}
+
+func (p *Param) SetConnect(c *Connect) {
+	p.Connect = c
+}
+
+func (p *Param) SetQuery(q *Query) {
+	p.Query = q
 }

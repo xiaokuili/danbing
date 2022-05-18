@@ -104,7 +104,7 @@ type SchedulerCommunicator struct {
 }
 
 func (s *SchedulerCommunicator) Report(m *Metric) {
-	fmt.Println(m)
+	fmt.Println(m.Counter)
 }
 
 func (t *SchedulerCommunicator) Name() string {
@@ -115,7 +115,7 @@ type TaskCommunicator struct {
 }
 
 func (t *TaskCommunicator) Report(m *Metric) {
-	fmt.Println(m)
+	fmt.Println(m.Counter)
 }
 
 func (t *TaskCommunicator) Name() string {

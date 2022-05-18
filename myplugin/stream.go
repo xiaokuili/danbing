@@ -1,16 +1,16 @@
 package myplugin
 
 import (
+	"danbing/conf"
 	"danbing/plugin"
-	"danbing/task"
 	"fmt"
 )
 
 type StreamReader struct {
-	Query *task.Query
+	Query *conf.Query
 }
 
-func (sr *StreamReader) Init(tq *task.Query, tc *task.Connect) {
+func (sr *StreamReader) Init(tq *conf.Query, tc *conf.Connect) {
 	sr.Query = tq
 }
 func (sr *StreamReader) Name() string {
@@ -36,7 +36,7 @@ func (sr *StreamReader) Reader() string {
 type StreamWriter struct {
 }
 
-func (sw *StreamWriter) Init(tq *task.Query, tc *task.Connect) {
+func (sw *StreamWriter) Init(tq *conf.Query, tc *conf.Connect) {
 
 }
 
@@ -57,7 +57,7 @@ func (sw *StreamWriter) Close() {
 }
 
 func (sw *StreamWriter) Writer(s string) {
-	fmt.Printf("save %s\n", s)
+	fmt.Printf("%s\n", s)
 }
 
 // TODO: init必须手动维护

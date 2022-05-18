@@ -1,8 +1,8 @@
 package myplugin
 
 import (
+	"danbing/conf"
 	"danbing/plugin"
-	"danbing/task"
 	"encoding/json"
 	"fmt"
 
@@ -13,12 +13,12 @@ import (
 )
 
 type PgReader struct {
-	Query   *task.Query
-	Connect *task.Connect
+	Query   *conf.Query
+	Connect *conf.Connect
 	db      *sql.DB
 }
 
-func (reader *PgReader) Init(tq *task.Query, tc *task.Connect) {
+func (reader *PgReader) Init(tq *conf.Query, tc *conf.Connect) {
 	var pool *sql.DB
 	var err error
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+

@@ -3,8 +3,8 @@ package myplugin
 import (
 	"bytes"
 	"context"
+	"danbing/conf"
 	"danbing/plugin"
-	"danbing/task"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -15,11 +15,11 @@ import (
 
 type EsWriter struct {
 	cli     *elasticsearch.Client
-	Connect *task.Connect
-	Query   *task.Query
+	Connect *conf.Connect
+	Query   *conf.Query
 }
 
-func (writer *EsWriter) Init(tq *task.Query, tc *task.Connect) {
+func (writer *EsWriter) Init(tq *conf.Query, tc *conf.Connect) {
 	url := fmt.Sprintf("http://%s:%d", tc.Host, tc.Port)
 	cfg := elasticsearch.Config{
 		Addresses: []string{
