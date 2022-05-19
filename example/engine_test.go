@@ -44,24 +44,6 @@ func streamJob() *job.Job {
 	return job
 }
 
-func Example_Engine() {
-	job := streamJob()
-	engine.Engine(job)
-
-	// Output:
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-
-}
-
 func Example_Engine_Report() {
 	job := streamJob()
 	engine.EngineReport(job)
@@ -79,4 +61,22 @@ func Example_Engine_Report() {
 	// hello world
 	// map[byteSize:10 recordcount:10]
 	// map[out:hello world]
+}
+
+func Example_Engine() {
+	job := streamJob()
+	engine.Engine(job)
+
+	// Output:
+	// hello world
+	// hello world
+	// hello world
+	// hello world
+	// hello world
+	// hello world
+	// hello world
+	// hello world
+	// hello world
+	// hello world
+
 }
