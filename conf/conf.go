@@ -20,6 +20,7 @@ type Query struct {
 	Offset  int
 	Table   string    `json:"table"`
 	Columns []*Column `json:"columns"`
+	Count   string
 }
 
 type Connect struct {
