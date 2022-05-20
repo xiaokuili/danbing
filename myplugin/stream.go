@@ -62,7 +62,7 @@ func (sw *StreamWriter) Close() {
 func (sw *StreamWriter) Writer(ss []map[string]interface{}) {
 	for i := 0; i < len(ss); i++ {
 		s := ss[i]
-		fmt.Printf("%s\n", s["out"])
+		fmt.Printf("%s\n", s)
 
 	}
 }

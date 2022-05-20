@@ -49,34 +49,16 @@ func Example_Engine_Report() {
 	engine.EngineReport(job)
 
 	// Output:
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
+	// map[out:hello world]
+	// map[out:hello world]
+	// map[out:hello world]
+	// map[out:hello world]
+	// map[out:hello world]
+	// map[out:hello world]
+	// map[out:hello world]
+	// map[out:hello world]
+	// map[out:hello world]
+	// map[out:hello world]
 	// map[byteSize:10 recordcount:10]
 	// map[out:hello world]
-}
-
-func Example_Engine() {
-	job := streamJob()
-	engine.Engine(job)
-
-	// Output:
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-	// hello world
-
 }

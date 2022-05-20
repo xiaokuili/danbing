@@ -4,6 +4,7 @@ import (
 	"danbing/conf"
 	"danbing/plugin"
 	"fmt"
+	"log"
 
 	"database/sql"
 
@@ -53,15 +54,44 @@ func (reader *PgReader) Copy() *PgReader {
 	return p
 }
 
+func (reader *PgReader) searchCount(sql string) int {
+	rows, err := reader.db.Query(sql)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	var count int
+
+	for rows.Next() {
+		if err := rows.Scan(&count); err != nil {
+			log.Fatal(err)
+		}
+	}
+	return count
+
+}
+
+func shuffle(total, task int) int {
+
+	partition := total / task
+
+	return partition
+}
+
 func (reader *PgReader) Split(taskNum int) []plugin.ReaderPlugin {
 	plugins := make([]plugin.ReaderPlugin, 0)
 	sqlbase := reader.Query.SQL
+	total := reader.searchCount(reader.Query.Count)
+	partition := shuffle(total, taskNum)
 
 	for i := 0; i < taskNum; i++ {
 		new := reader.Copy()
-
-		new.Query.Offset = i * reader.Query.Size
-		sql := fmt.Sprintf("%s offset %d limit %d", sqlbase, new.Query.Offset, reader.Query.Size)
+		offset := i * partition
+		if i == taskNum-1 {
+			partition = total - offset + 10
+		}
+		sql := fmt.Sprintf("%s offset %d limit %d", sqlbase, offset, partition)
 		// sql := sqlbase
 
 		new.Query.SQL = sql
@@ -77,6 +107,7 @@ func (reader *PgReader) Reader() []map[string]interface{} {
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	defer rows.Close()
 	cols, _ := rows.Columns()
 	if len(cols) > 0 {
