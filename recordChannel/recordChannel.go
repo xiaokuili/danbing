@@ -33,8 +33,8 @@ func (r *Record) GetRecord() []map[string]interface{} {
 }
 
 func (r *Record) PutRecord(record []map[string]interface{}) {
-	r.Communication.AddCounter("byteSize", len(record))
-	r.Communication.IncreaseCounter("recordcount")
+
+	r.Communication.AddCounter(statistic.RecordCount, len(record))
 	r.C <- record
 
 }

@@ -17,6 +17,14 @@ const (
 	SUCCEEDED State = 4
 )
 
+const (
+	RecordCount = "record count"
+)
+
+var CollectField []string = []string{
+	RecordCount,
+}
+
 type Metric struct {
 	Counter    map[string]int
 	State      State
@@ -49,14 +57,14 @@ func (c *Metric) SetTimestamp(t time.Time) {
 	c.Timestamp = t
 }
 
-func (c *Metric) GetCounter(key string) (int, error) {
+func (c *Metric) GetCounter(key string) int {
 	c.Lock()
 	defer c.Unlock()
 	r, ok := c.Counter[key]
 	if ok {
-		return r, nil
+		return r
 	}
-	return 0, errors.New("cant find key value")
+	return 0
 }
 
 func (c *Metric) GetMessage(key string) (string, error) {
@@ -87,17 +95,23 @@ func (c *Metric) AddCounter(key string, value int) {
 	c.Counter[key] = c.Counter[key] + value
 }
 
+func (c *Metric) refreshCounter(key string) {
+	c.Lock()
+	defer c.Unlock()
+	c.Counter[key] = 0
+}
+
 func (c *Metric) MergeFrom(final *Metric) {
+
 	c.Lock()
 	defer c.Unlock()
 	c.Throwable = final.Throwable
 	c.Timestamp = time.Now()
 
-	for k, v := range final.Counter {
-		c.Counter[k] = v + c.Counter[k]
+	for i := 0; i < len(CollectField); i++ {
+		k := CollectField[i]
+		c.Counter[k] = c.Counter[k] + final.GetCounter(k)
+		final.refreshCounter(k)
 	}
 
-	for k, v := range final.Message {
-		c.Message[k] = v
-	}
 }

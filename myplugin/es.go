@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"reflect"
+	"strings"
 
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
@@ -78,10 +80,22 @@ func (writer *EsWriter) Writer(result []map[string]interface{}) {
 			if c.PrimaryField {
 				docID = docID + toStr(d[c.Name])
 			}
+			if c.FieldStype == "object" {
+				w := make(map[string]interface{})
+				v := d[c.Name]
+				switch v := reflect.ValueOf(v); v.Kind() {
+				case reflect.String:
+					err := json.Unmarshal([]byte(v.String()), &w)
+					if err != nil {
+						panic("")
+					}
+					d[strings.ToUpper(c.Name[:1])+c.Name[1:]] = w
+				}
+
+			}
 
 		}
-		fmt.Println(docID)
-
+		delete(d, "value")
 		data, err := json.Marshal(d)
 		if err != nil {
 			fmt.Println(err)
@@ -107,7 +121,7 @@ func (writer *EsWriter) Writer(result []map[string]interface{}) {
 				log.Printf("Error parsing the response body: %s", err)
 			} else {
 				// Print the response status and indexed document version.
-				log.Printf("[%s] %s; version=%d", res.Status(), r["result"], int(r["_version"].(float64)))
+				// log.Printf("[%s] %s; version=%d", res.Status(), r["result"], int(r["_version"].(float64)))
 			}
 		}
 	}

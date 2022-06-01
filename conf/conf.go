@@ -12,6 +12,7 @@ type Column struct {
 	WhereField   bool   `json:"where_field"`   // update
 	PrimaryField bool   `json:"primary_field"` // upsert
 	CollectField bool
+	FieldStype   string
 }
 
 type Query struct {
