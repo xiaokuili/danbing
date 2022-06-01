@@ -4,6 +4,7 @@ import (
 	"danbing/job"
 	_ "danbing/myplugin"
 	"danbing/scheduler"
+	"time"
 )
 
 func Engine(job *job.Job) {
@@ -20,6 +21,14 @@ func EngineReport(job *job.Job) {
 	genesis := scheduelr.Init()
 	tasks := scheduelr.Split(genesis)
 	scheduelr.GroupTasks(tasks)
+	go func() {
+		for {
+			time.Sleep(time.Second * 1)
+			scheduelr.Report()
+		}
+	}()
+
 	scheduelr.Scheduler()
-	scheduelr.Report()
+	// scheduelr.Report()
+
 }
