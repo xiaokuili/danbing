@@ -32,7 +32,7 @@ func pg2esJob() *job.Job {
 			Host:     "192.168.200.200",
 			Port:     5432,
 			Username: "dm",
-			Password: "ZybsHt2oY4l2V200",
+			Password: "xxx",
 			Database: "dm",
 		},
 		Query: &conf.Query{
@@ -49,7 +49,7 @@ func pg2esJob() *job.Job {
 			Host:     "192.168.216.124",
 			Port:     18054,
 			Username: "elastic",
-			Password: "HGeMa7BMi6CLjNbPmONZ",
+			Password: "xxxx",
 			Database: "",
 		},
 		Query: &conf.Query{
