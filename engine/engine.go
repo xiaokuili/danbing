@@ -29,6 +29,6 @@ func EngineReport(job *job.Job) {
 	}()
 
 	scheduelr.Scheduler()
-	// scheduelr.Report()
+	scheduelr.Report()
 
 }
