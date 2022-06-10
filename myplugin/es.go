@@ -8,41 +8,54 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"reflect"
 	"strings"
+	"time"
 
+	"github.com/cenkalti/backoff"
+	"github.com/dustin/go-humanize"
 	"github.com/elastic/go-elasticsearch/v7"
-	"github.com/elastic/go-elasticsearch/v7/esapi"
+	"github.com/elastic/go-elasticsearch/v7/esutil"
 )
 
 type EsWriter struct {
-	cli     *elasticsearch.Client
+	es      *elasticsearch.Client
 	Connect *conf.Connect
 	Query   *conf.Query
 }
 
 func (writer *EsWriter) Init(tq *conf.Query, tc *conf.Connect) {
 	url := fmt.Sprintf("http://%s:%d", tc.Host, tc.Port)
-	cfg := elasticsearch.Config{
+	retryBackoff := backoff.NewExponentialBackOff()
+
+	es, err := elasticsearch.NewClient(elasticsearch.Config{
+
+		// Retry on 429 TooManyRequests statuses
+		//
+		RetryOnStatus: []int{502, 503, 504},
+
+		// Configure the backoff function
+		//
+		RetryBackoff: func(i int) time.Duration {
+			if i == 1 {
+				retryBackoff.Reset()
+			}
+			return retryBackoff.NextBackOff()
+		},
+
+		// Retry up to 5 attempts
+		//
+		MaxRetries: 5,
 		Addresses: []string{
 			url,
 		},
 		Username: tc.Username,
 		Password: tc.Password,
-	}
-	cli, err := elasticsearch.NewClient(cfg)
+	})
 	if err != nil {
-		fmt.Println(err)
+		log.Fatalf("Error creating the client: %s", err)
 	}
-	res, err := cli.Info()
-	if err != nil {
-		fmt.Println(err)
-	}
-	if res.StatusCode != 200 {
-		fmt.Println(res.String())
 
-	}
-	writer.cli = cli
+	writer.es = es
 	writer.Query = tq
 }
 
@@ -70,60 +83,76 @@ func toStr(i interface{}) string {
 	return ""
 }
 
+func CreateID(column []*conf.Column, data map[string]interface{}) string {
+	docID := ""
+	for i := 0; i < len(column); i++ {
+		c := column[i]
+		if c.PrimaryField {
+			docID = docID + toStr(data[c.Name])
+		}
+	}
+	return docID
+}
+
 func (writer *EsWriter) Writer(result []map[string]interface{}) {
 
+	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
+		Index:         writer.Query.Table,
+		Client:        writer.es,
+		NumWorkers:    3,
+		FlushInterval: 30 * time.Second,
+	})
+	if err != nil {
+		log.Fatalf("Error creating the indexer: %s", err)
+	}
+	start := time.Now().UTC()
+
 	for i := 0; i < len(result); i++ {
-		d := result[i]
-		var docID string
-		for i := 0; i < len(writer.Query.Columns); i++ {
-			c := writer.Query.Columns[i]
-			if c.PrimaryField {
-				docID = docID + toStr(d[c.Name])
-			}
-			if c.FieldStype == "object" {
-				w := make(map[string]interface{})
-				v := d[c.Name]
-				switch v := reflect.ValueOf(v); v.Kind() {
-				case reflect.String:
-					err := json.Unmarshal([]byte(v.String()), &w)
-					if err != nil {
-						panic("")
-					}
-					d[strings.ToUpper(c.Name[:1])+c.Name[1:]] = w
-				}
+		docID := CreateID(writer.Query.Columns, result[i])
+		d, err := json.Marshal(result[i])
+		err = bi.Add(
+			context.Background(),
+			esutil.BulkIndexerItem{
+				Action: "index",
 
-			}
+				DocumentID: docID,
 
-		}
-		delete(d, "value")
-		data, err := json.Marshal(d)
+				Body: bytes.NewReader(d),
+			},
+		)
 		if err != nil {
-			fmt.Println(err)
+			log.Fatalf("Unexpected error: %s", err)
 		}
+	}
+	if err := bi.Close(context.Background()); err != nil {
+		log.Fatalf("Unexpected error: %s", err)
+	}
 
-		req := esapi.IndexRequest{
-			Index:      writer.Query.Table,
-			DocumentID: docID,
-			Body:       bytes.NewReader(data),
-			Refresh:    "true",
-		}
-		res, err := req.Do(context.Background(), writer.cli)
-		if err != nil {
-			log.Fatalf("Error getting response: %s", err)
-		}
-		defer res.Body.Close()
-		if res.IsError() {
-			log.Printf("[%s] Error indexing document ID=%d", res.Status(), i+1)
-		} else {
-			// Deserialize the response into a map.
-			var r map[string]interface{}
-			if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
-				log.Printf("Error parsing the response body: %s", err)
-			} else {
-				// Print the response status and indexed document version.
-				// log.Printf("[%s] %s; version=%d", res.Status(), r["result"], int(r["_version"].(float64)))
-			}
-		}
+	biStats := bi.Stats()
+
+	// Report the results: number of indexed docs, number of errors, duration, indexing rate
+	//
+	log.Println(strings.Repeat("▔", 65))
+
+	dur := time.Since(start)
+
+	if biStats.NumFailed > 0 {
+		log.Println(CreateID(writer.Query.Columns, result[23]), result[23])
+		log.Fatalf(
+			"Indexed [%s] documents with [%s] errors in %s (%s docs/sec)",
+			humanize.Comma(int64(biStats.NumFlushed)),
+			humanize.Comma(int64(biStats.NumFailed)),
+			dur.Truncate(time.Millisecond),
+			humanize.Comma(int64(1000.0/float64(dur/time.Millisecond)*float64(biStats.NumFlushed))),
+		)
+
+	} else {
+		log.Printf(
+			"Sucessfuly indexed [%s] documents in %s (%s docs/sec)",
+			humanize.Comma(int64(biStats.NumFlushed)),
+			dur.Truncate(time.Millisecond),
+			humanize.Comma(int64(1000.0/float64(dur/time.Millisecond)*float64(biStats.NumFlushed))),
+		)
 	}
 
 }

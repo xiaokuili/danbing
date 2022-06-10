@@ -52,10 +52,12 @@ func toString(i interface{}) string {
 
 func (t *Task) Run() {
 	var wg sync.WaitGroup
+	fmt.Printf("%d reader begin run\n", t.ID)
 
 	wg.Add(2)
 	go func(t *Task) {
 		defer wg.Done()
+
 		record := t.Reader.Reader()
 		// 在这里基于字段进行收集
 		if len(record) > 0 {
@@ -81,6 +83,8 @@ func (t *Task) Run() {
 		// 在这里基于字段进行收集
 		t.Writer.Writer(record)
 	}(t)
+	fmt.Printf("%d writer ending run\n", t.ID)
+
 	wg.Wait()
 }
 
