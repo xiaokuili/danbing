@@ -8,7 +8,7 @@ import (
 
 // 接口
 type Communicator interface {
-	Report(*Metric)
+	Report(*Metric) string
 	Name() string
 }
 
@@ -67,15 +67,16 @@ func New(id int, name, table string) *Communication {
 func (c *Communication) Collect() *Metric {
 	m := c.Metric
 	for i := 0; i < len(c.Child); i++ {
+
 		m.MergeFrom(c.Child[i].Collect())
 	}
 	return m
 }
 
-func (c *Communication) Report() {
+func (c *Communication) Report() string {
 	m := c.Collect()
 
-	Collects[c.Name].Report(m)
+	return Collects[c.Name].Report(m)
 }
 
 func (c *Communication) Build(newC *Communication) {
@@ -92,8 +93,8 @@ func (c *Communication) AddCounter(key string, value int) {
 type TaskGroupCommunicator struct {
 }
 
-func (t *TaskGroupCommunicator) Report(m *Metric) {
-	fmt.Println(m)
+func (t *TaskGroupCommunicator) Report(m *Metric) string {
+	return ""
 }
 
 func (t *TaskGroupCommunicator) Name() string {
@@ -103,9 +104,9 @@ func (t *TaskGroupCommunicator) Name() string {
 type SchedulerCommunicator struct {
 }
 
-func (s *SchedulerCommunicator) Report(m *Metric) {
-	fmt.Println(m.Counter)
-
+func (s *SchedulerCommunicator) Report(m *Metric) string {
+	msg := fmt.Sprintf("%d", m.GetCounter(RecordCount))
+	return msg
 }
 
 func (t *SchedulerCommunicator) Name() string {
@@ -115,8 +116,8 @@ func (t *SchedulerCommunicator) Name() string {
 type TaskCommunicator struct {
 }
 
-func (t *TaskCommunicator) Report(m *Metric) {
-	fmt.Println(m.Counter)
+func (t *TaskCommunicator) Report(m *Metric) string {
+	return ""
 }
 
 func (t *TaskCommunicator) Name() string {
