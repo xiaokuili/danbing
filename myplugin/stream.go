@@ -16,6 +16,9 @@ func (sr *StreamReader) Init(tq *conf.Query, tc *conf.Connect) {
 func (sr *StreamReader) Name() string {
 	return "streamreader"
 }
+func (sr *StreamReader) Count() int {
+	return 0
+}
 
 func (sr *StreamReader) Split(taskNum int) []plugin.ReaderPlugin {
 	plugins := make([]plugin.ReaderPlugin, 0)

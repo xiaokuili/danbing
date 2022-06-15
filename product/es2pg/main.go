@@ -5,8 +5,6 @@ import (
 	"danbing/cons"
 	"danbing/engine"
 	"danbing/job"
-	"fmt"
-	"time"
 )
 
 // 	select
@@ -16,7 +14,7 @@ import (
 // dm_ecoi_edb_value as dm
 
 func pg2esJob() *job.Job {
-	sql := `select id from dm_lget_company_qualification_rel`
+	sql := `select id from dm_lget_company_addissue`
 	job := job.New("danbing")
 	c := make([]*conf.Column, 0)
 	c = append(c, &conf.Column{
@@ -32,12 +30,12 @@ func pg2esJob() *job.Job {
 			Host:     "192.168.200.200",
 			Port:     5432,
 			Username: "dm",
-			Password: "xxx",
+			Password: "ZybsHt2oY4l2V200",
 			Database: "dm",
 		},
 		Query: &conf.Query{
 			SQL:   sql,
-			Count: "select count(*) from dm_lget_company_qualification_rel",
+			Count: "select count(*) from dm_lget_company_addissue",
 		},
 		Type: cons.PLUGINREADER,
 		Name: "pgsqlreader",
@@ -49,12 +47,13 @@ func pg2esJob() *job.Job {
 			Host:     "192.168.216.124",
 			Port:     18054,
 			Username: "elastic",
-			Password: "xxxx",
+			Password: "HGeMa7BMi6CLjNbPmONZ",
 			Database: "",
 		},
 		Query: &conf.Query{
 
-			Table: "danbingtest",
+			Table:   "danbingtest",
+			Columns: c,
 		},
 		Type: cons.PLUGINWRITER,
 		Name: "eswriter",
@@ -72,8 +71,7 @@ func pg2esJob() *job.Job {
 	return job
 }
 func main() {
-	t := time.Now()
+
 	job := pg2esJob()
 	engine.EngineReport(job)
-	fmt.Println(time.Since(t))
 }

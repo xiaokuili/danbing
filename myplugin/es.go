@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff"
@@ -91,6 +90,9 @@ func CreateID(column []*conf.Column, data map[string]interface{}) string {
 			docID = docID + toStr(data[c.Name])
 		}
 	}
+	if docID == "" {
+		panic("id不能为空")
+	}
 	return docID
 }
 
@@ -110,6 +112,9 @@ func (writer *EsWriter) Writer(result []map[string]interface{}) {
 	for i := 0; i < len(result); i++ {
 		docID := CreateID(writer.Query.Columns, result[i])
 		d, err := json.Marshal(result[i])
+		if err != nil {
+			panic(err)
+		}
 		err = bi.Add(
 			context.Background(),
 			esutil.BulkIndexerItem{
@@ -130,14 +135,10 @@ func (writer *EsWriter) Writer(result []map[string]interface{}) {
 
 	biStats := bi.Stats()
 
-	// Report the results: number of indexed docs, number of errors, duration, indexing rate
-	//
-	log.Println(strings.Repeat("▔", 65))
-
 	dur := time.Since(start)
 
 	if biStats.NumFailed > 0 {
-		log.Println(CreateID(writer.Query.Columns, result[23]), result[23])
+
 		log.Fatalf(
 			"Indexed [%s] documents with [%s] errors in %s (%s docs/sec)",
 			humanize.Comma(int64(biStats.NumFlushed)),
@@ -146,13 +147,6 @@ func (writer *EsWriter) Writer(result []map[string]interface{}) {
 			humanize.Comma(int64(1000.0/float64(dur/time.Millisecond)*float64(biStats.NumFlushed))),
 		)
 
-	} else {
-		log.Printf(
-			"Sucessfuly indexed [%s] documents in %s (%s docs/sec)",
-			humanize.Comma(int64(biStats.NumFlushed)),
-			dur.Truncate(time.Millisecond),
-			humanize.Comma(int64(1000.0/float64(dur/time.Millisecond)*float64(biStats.NumFlushed))),
-		)
 	}
 
 }

@@ -3,11 +3,13 @@ package taskgroup
 import (
 	"danbing/conf"
 	"danbing/cons"
+	"danbing/log"
 	"danbing/plugin"
 	recordchannel "danbing/recordChannel"
 	statistic "danbing/statistics"
 	"fmt"
 	"sync"
+	"time"
 )
 
 type Task struct {
@@ -21,7 +23,7 @@ type Task struct {
 }
 
 func (t *Task) CheckTask() bool {
-	return t.Reader != nil && t.Writer != nil
+	return t.Reader != nil && t.Writer != nil && t.Communication != nil
 }
 
 func NewTask(id int, table string, reader plugin.ReaderPlugin, writer plugin.WriterPlugin) *Task {
@@ -34,6 +36,7 @@ func NewTask(id int, table string, reader plugin.ReaderPlugin, writer plugin.Wri
 		Communication: communication,
 	}
 }
+
 func (t *Task) SetReaderParam(p *conf.Param) {
 	t.ReaderParam = p
 }
@@ -52,7 +55,6 @@ func toString(i interface{}) string {
 
 func (t *Task) Run() {
 	var wg sync.WaitGroup
-	fmt.Printf("%d reader begin run\n", t.ID)
 
 	wg.Add(2)
 	go func(t *Task) {
@@ -80,10 +82,10 @@ func (t *Task) Run() {
 	go func(t *Task) {
 		defer wg.Done()
 		record := t.Record.GetRecord()
-		// 在这里基于字段进行收集
+
 		t.Writer.Writer(record)
+
 	}(t)
-	fmt.Printf("%d writer ending run\n", t.ID)
 
 	wg.Wait()
 }
@@ -93,6 +95,7 @@ type TaskGroup struct {
 	Tasks         []*Task
 	Communication *statistic.Communication
 	Table         string
+	logger        log.Logger
 }
 
 func New(id int, table string) *TaskGroup {
@@ -105,6 +108,11 @@ func New(id int, table string) *TaskGroup {
 	}
 	return tg
 }
+
+func (tg *TaskGroup) SetLogger(logger log.Logger) {
+	tg.logger = logger
+}
+
 func (tg *TaskGroup) Check() bool {
 	return tg.Communication != nil
 }
@@ -114,14 +122,20 @@ func (tg *TaskGroup) PutTask(task *Task) {
 	tg.registerTaskCommunication(task)
 }
 
-func (tg *TaskGroup) registerTaskCommunication(task *Task) {
-
-	tg.Communication.Build(task.Communication)
-}
-
 func (tg *TaskGroup) Run() {
+	t := time.Now()
 	for i := 0; i < len(tg.Tasks); i++ {
 		t := tg.Tasks[i]
 		t.Run()
+	}
+	consume := fmt.Sprintf("%v", time.Since(t))
+	msg := fmt.Sprintf("taskgroup [%d] end", tg.ID)
+	tg.logger.Debug(msg, []interface{}{"consume", consume}...)
+
+}
+
+func (tg *TaskGroup) registerTaskCommunication(task *Task) {
+	if task.CheckTask() {
+		tg.Communication.Build(task.Communication)
 	}
 }

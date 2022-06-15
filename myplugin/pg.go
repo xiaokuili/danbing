@@ -16,6 +16,7 @@ type PgReader struct {
 	Query   *conf.Query
 	Connect *conf.Connect
 	db      *sql.DB
+	Total   int
 }
 
 func (reader *PgReader) Init(tq *conf.Query, tc *conf.Connect) {
@@ -82,7 +83,8 @@ func shuffle(total, task int) int {
 func (reader *PgReader) Split(taskNum int) []plugin.ReaderPlugin {
 	plugins := make([]plugin.ReaderPlugin, 0)
 	sqlbase := reader.Query.SQL
-	total := reader.searchCount(reader.Query.Count)
+	total := reader.Count()
+
 	partition := shuffle(total, taskNum)
 
 	for i := 0; i < taskNum; i++ {
@@ -98,6 +100,14 @@ func (reader *PgReader) Split(taskNum int) []plugin.ReaderPlugin {
 		plugins = append(plugins, new)
 	}
 	return plugins
+}
+
+func (reader *PgReader) Count() int {
+	if reader.Total == 0 {
+		reader.Total = reader.searchCount(reader.Query.Count)
+	}
+
+	return reader.Total
 }
 
 func (reader *PgReader) Reader() []map[string]interface{} {

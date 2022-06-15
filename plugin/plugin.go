@@ -15,6 +15,7 @@ type ReaderPlugin interface {
 	Name() string
 	Split(taskNum int) []ReaderPlugin
 	Reader() []map[string]interface{}
+	Count() int
 	Close()
 }
 
