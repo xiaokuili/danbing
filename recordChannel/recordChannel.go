@@ -34,7 +34,7 @@ func (r *Record) GetRecord() []map[string]interface{} {
 
 func (r *Record) PutRecord(record []map[string]interface{}) {
 
-	r.Communication.AddCounter(statistic.RecordCount, len(record))
+	r.Communication.AddCounter(statistic.RC, len(record))
 	r.C <- record
 
 }

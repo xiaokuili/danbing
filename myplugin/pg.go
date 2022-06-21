@@ -82,10 +82,12 @@ func shuffle(total, task int) int {
 
 func (reader *PgReader) Split(taskNum int) []plugin.ReaderPlugin {
 	plugins := make([]plugin.ReaderPlugin, 0)
-	sqlbase := reader.Query.SQL
+
 	total := reader.Count()
 
 	partition := shuffle(total, taskNum)
+
+	sqlbase := reader.Query.SQL
 
 	for i := 0; i < taskNum; i++ {
 		new := reader.Copy()
@@ -93,6 +95,7 @@ func (reader *PgReader) Split(taskNum int) []plugin.ReaderPlugin {
 		if i == taskNum-1 {
 			partition = total - offset + 10
 		}
+
 		sql := fmt.Sprintf("%s offset %d limit %d", sqlbase, offset, partition)
 		// sql := sqlbase
 

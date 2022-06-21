@@ -11,17 +11,20 @@ type Column struct {
 	Name         string `json:"name"`
 	WhereField   bool   `json:"where_field"`   // update
 	PrimaryField bool   `json:"primary_field"` // upsert
-	CollectField bool
-	FieldStype   string
+
+	FieldStype string
 }
 
 type Query struct {
-	SQL     string `json:"sql"`
-	Size    int
-	Offset  int
-	Table   string    `json:"table"`
-	Columns []*Column `json:"columns"`
-	Count   string
+	SQL       string `json:"sql"`
+	Size      int
+	Offset    int
+	Table     string    `json:"table"`
+	Columns   []*Column `json:"columns"`
+	Count     string
+	Update    bool
+	EndTime   string
+	BeginTime string
 }
 
 type Connect struct {
@@ -39,6 +42,7 @@ type Speed struct {
 	RecordPerChannel int `json:"record_per_channel"`
 	Channel          int `json:"channel"` // 拆分任务数量 = 总记录/每个任务数量(byte类似)
 	Thread           int `json:"thread"`  // 执行线程数
+
 }
 
 type Param struct {

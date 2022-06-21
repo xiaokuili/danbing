@@ -11,8 +11,7 @@ func streamJob() *job.Job {
 	job := job.New("danbing")
 	c := make([]*conf.Column, 0)
 	c = append(c, &conf.Column{
-		Name:         "out",
-		CollectField: true, // 收集这个字段的最后一条数据
+		Name: "out",
 	})
 	reader := &conf.Param{
 		Connect: &conf.Connect{},

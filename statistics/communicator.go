@@ -105,7 +105,7 @@ type SchedulerCommunicator struct {
 }
 
 func (s *SchedulerCommunicator) Report(m *Metric) string {
-	msg := fmt.Sprintf("%d", m.GetCounter(RecordCount))
+	msg := fmt.Sprintf("%d", m.GetCounter(RC))
 	return msg
 }
 

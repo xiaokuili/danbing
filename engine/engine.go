@@ -12,6 +12,9 @@ func Engine(job *job.Job) {
 }
 
 func EngineReport(job *job.Job) {
+	job.SetBeginTime("2022-02-03")
+	job.SetEndTime("2022-06-04")
+	job.Refresh()
 	scheduler.Run(job)
 
 }

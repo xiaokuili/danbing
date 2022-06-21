@@ -100,29 +100,30 @@ func run(job *job.Job, logger log.Logger) {
 	s.AssignTasks(tasks)
 	go func(time.Time) {
 		for {
-
 			s.Report(t)
-			time.Sleep(time.Second * 100)
+			time.Sleep(time.Second * 1)
 		}
 	}(t)
 
 	s.Scheduler()
 	s.Report(t)
+
 }
 
 func (s *Scheduler) Report(t time.Time) {
 	deal := s.Communication.Report()
+
 	total := s.Total
 	d, err := strconv.Atoi(deal)
 	if err != nil {
 		d = 0
 	}
-	percent := Percentage(d, total)
+	percent := percentage(d, total)
 	et := 0
 	if percent == 0 {
 		et = s.Total / 20000
 	} else {
-		et = int((1 - percent) * time.Since(t).Seconds() / percent)
+		et = (100 - percent) * int(time.Since(t).Seconds()) / percent
 	}
 
 	s.logger.Info("", "deal", deal, "total", s.Total, "percent", percent, "estimate", et)
@@ -196,8 +197,8 @@ func (s *Scheduler) registerTaskgroupCommunication(tg *taskgroup.TaskGroup) {
 	s.Communication.Build(tg.Communication)
 }
 
-func Percentage(part, total int) (delta float64) {
+func percentage(part, total int) int {
 
-	delta = (float64(part) / float64(total)) * 100
-	return
+	delta := (float64(part) / float64(total)) * 100
+	return int(delta)
 }

@@ -18,11 +18,11 @@ const (
 )
 
 const (
-	RecordCount = "record count"
+	RC = "record count"
 )
 
-var CollectField []string = []string{
-	RecordCount,
+var CollectCount []string = []string{
+	RC,
 }
 
 type Metric struct {
@@ -108,8 +108,9 @@ func (c *Metric) MergeFrom(final *Metric) {
 	c.Throwable = final.Throwable
 	c.Timestamp = time.Now()
 
-	for i := 0; i < len(CollectField); i++ {
-		k := CollectField[i]
+	for i := 0; i < len(CollectCount); i++ {
+		k := CollectCount[i]
+
 		c.Counter[k] = c.Counter[k] + final.GetCounter(k)
 		final.refreshCounter(k)
 	}
