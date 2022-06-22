@@ -64,7 +64,7 @@ func pg2esJob() *job.Job {
 		BytePerChannel:   0,
 		Record:           0,
 		RecordPerChannel: 0,
-		Channel:          80, // task 数量
+		TaskRecordsNum:   80, // task 数量
 		Thread:           50, // threat group数量
 	}
 	job.SetSpeed(speed)
@@ -73,5 +73,5 @@ func pg2esJob() *job.Job {
 func main() {
 
 	job := pg2esJob()
-	engine.EngineReport(job)
+	engine.Run(job)
 }

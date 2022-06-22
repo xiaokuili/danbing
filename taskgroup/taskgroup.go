@@ -45,7 +45,7 @@ func (t *Task) SetWriterParam(p *conf.Param) {
 	t.WriterParam = p
 }
 
-func toString(i interface{}) string {
+func str(i interface{}) string {
 	r, ok := i.(string)
 	if !ok {
 		panic(fmt.Errorf("%v cant change to string", i))
@@ -61,21 +61,7 @@ func (t *Task) Run() {
 		defer wg.Done()
 
 		record := t.Reader.Reader()
-		// 在这里基于字段进行收集
-		if len(record) > 0 {
-			columns := t.ReaderParam.Query.Columns
 
-			r := record[len(record)-1]
-			for i := 0; i < len(columns); i++ {
-				field := columns[i]
-				if field.CollectField {
-					name := field.Name
-					t.Communication.Metric.SetMessage(name, toString(r[name]))
-
-				}
-			}
-
-		}
 		t.Record.PutRecord(record)
 	}(t)
 

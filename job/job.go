@@ -3,12 +3,17 @@ package job
 import (
 	"danbing/conf"
 	"danbing/cons"
+	"fmt"
+	"time"
 )
 
 type Job struct {
-	Param []*conf.Param `json:"job"`
-	Speed *conf.Speed   `json:"speed"`
-	Table string
+	Param  []*conf.Param `json:"job"`
+	Speed  *conf.Speed   `json:"speed"`
+	Table  string
+	Name   string
+	Batch  string
+	Stream bool
 }
 
 func New(table string) *Job {
@@ -16,7 +21,12 @@ func New(table string) *Job {
 		Param: []*conf.Param{},
 		Speed: &conf.Speed{},
 		Table: table,
+		Name:  table,
+		Batch: time.Now().Format(time.RFC3339),
 	}
+}
+func (j *Job) SetStream() {
+	j.Stream = true
 }
 
 func (j *Job) SetSpeed(s *conf.Speed) {
@@ -65,4 +75,73 @@ func (j *Job) SetWriterParam(p *conf.Param) {
 	if j.Param[0].Type != cons.PLUGINWRITER {
 		j.Param = append(j.Param, p)
 	}
+}
+
+func (j *Job) reader() *conf.Param {
+	var r *conf.Param
+	for i := 0; i < len(j.Param); i++ {
+		if j.Param[i].Type == cons.PLUGINREADER {
+			r = j.Param[i]
+		}
+	}
+	return r
+}
+
+func (j *Job) writer() *conf.Param {
+	var w *conf.Param
+	for i := 0; i < len(j.Param); i++ {
+		if j.Param[i].Type == cons.PLUGINWRITER {
+			w = j.Param[i]
+		}
+	}
+	return w
+}
+
+func (j *Job) SetBeginTime(b string) {
+	r := j.reader()
+	if j.isUpdate() {
+		r.Query.BeginTime = b
+	}
+}
+
+func (j *Job) SetEndTime(b string) {
+	r := j.reader()
+	if j.isUpdate() {
+		r.Query.EndTime = b
+	}
+}
+
+func (j *Job) isUpdate() bool {
+	return j.where() != ""
+}
+
+func (j *Job) where() string {
+	var column []*conf.Column
+	for i := 0; i < len(j.Param); i++ {
+		if j.Param[i].Type == cons.PLUGINREADER {
+			column = j.Param[i].Query.Columns
+		}
+	}
+	for i := 0; i < len(column); i++ {
+		c := column[i]
+		if c.WhereField {
+			return c.Name
+		}
+	}
+	return ""
+}
+
+func (j *Job) Refresh() {
+	if j.isUpdate() {
+		reader := j.reader()
+		where := j.where()
+		whereSQL := fmt.Sprintf(" where %s > '%s' and %s <= '%s'", where, reader.Query.BeginTime, where, reader.Query.EndTime)
+		sql := reader.Query.SQL
+		sql = sql + whereSQL
+		reader.Query.SQL = sql
+		count := reader.Query.Count + whereSQL
+		reader.Query.Count = count
+
+	}
+
 }
