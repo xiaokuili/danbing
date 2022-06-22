@@ -4,15 +4,20 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
+const (
+	table     = "log"
+	insertSQL = "INSERT INTO  log (batch, name, uptime) values(?, ?, ?)"
+	searchSQL = "select batch,name,uptime   from log where name='%s' order by uptime desc limit 1;	"
+)
+
 type Info struct {
 	Batch  string
-	Table  string
-	Uptime string
+	Name   string
+	Uptime int64
 }
 
 type Database interface {
@@ -21,38 +26,50 @@ type Database interface {
 }
 
 func init() {
-	os.Remove("./log.db")
+	createTable()
+}
 
-	db, err := sql.Open("sqlite3", "./log.db")
+func createDB() *sql.DB {
+	locat := fmt.Sprintf("./%s.db", table)
+	db, err := sql.Open("sqlite3", locat)
 	if err != nil {
 		log.Fatal(err)
 	}
+	return db
+}
+
+func createTable() error {
+	db := createDB()
 	defer db.Close()
 	sqlStmt := `
-	create table IF NOT EXISTS log(id integer not null primary key, batch varchar(20),table varchar(20), uptime varchar(20));
+		CREATE table if not exists log (
+			id integer not null primary key,
+			batch varchar(20),
+			name varchar(20),
+			uptime INTEGER 	
+		)
 	`
-	_, err = db.Exec(sqlStmt)
+	_, err := db.Exec(sqlStmt)
 	if err != nil {
-		return
+		return err
 	}
+	return nil
+
 }
 
 func (i *Info) Insert() error {
-	db, err := sql.Open("sqlite3", "./foo.db")
-	if err != nil {
-		log.Fatal(err)
-	}
+	db := createDB()
 	defer db.Close()
 	tx, err := db.Begin()
 	if err != nil {
 		log.Fatal(err)
 	}
-	stmt, err := tx.Prepare("insert into foo(batch, table, uptime) values(?, ?, ?)")
+	stmt, err := tx.Prepare(insertSQL)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(i.Batch, i.Table, i.Uptime)
+	_, err = stmt.Exec(i.Batch, i.Name, i.Uptime)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,27 +80,40 @@ func (i *Info) Insert() error {
 	return nil
 }
 
-func (i *Info) Search(table string) *Info {
+func Search(sql string) []*Info {
 
-	db, err := sql.Open("sqlite3", "./log.db")
-	if err != nil {
-		log.Fatal(err)
-	}
+	db := createDB()
 	defer db.Close()
-
-	rows, err := db.Query("select * from log ")
+	result := make([]*Info, 0)
+	rows, err := db.Query(sql)
 	if err != nil {
-		log.Fatal(err)
+
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var id int
 		var name string
-		err = rows.Scan(&id, &name)
+		var uptime int64
+		var batch string
+		err = rows.Scan(&batch, &name, &uptime)
 		if err != nil {
-			log.Fatal(err)
+
 		}
-		fmt.Println(id, name)
+		info := Info{
+			Batch:  batch,
+			Name:   name,
+			Uptime: uptime,
+		}
+		result = append(result, &info)
 	}
-	return nil
+	return result
+}
+
+func SearchLast(name string) *Info {
+	var one *Info
+	sql := fmt.Sprintf(searchSQL, name)
+	result := Search(sql)
+	if len(result) == 1 {
+		one = result[0]
+	}
+	return one
 }

@@ -1,50 +1,75 @@
 package db
 
 import (
-	"reflect"
+	"fmt"
 	"testing"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func TestInfo_Search(t *testing.T) {
+const (
+	testname = "test"
+)
+
+func TestInfo_Insert(t *testing.T) {
 	type fields struct {
 		Batch  string
-		Table  string
-		Uptime string
+		Name   string
+		Uptime int64
 	}
-	type args struct {
-		table string
-	}
+	one := time.Now().Add(time.Second * 10).Unix()
+	two := time.Now().Add(time.Second * 20).Unix()
+	three := time.Now().Add(time.Second * 30).Unix()
+	fmt.Println(one, two, three)
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   *Info
+		name    string
+		fields  fields
+		wantErr bool
 	}{
 		// TODO: Add test cases.
 		{
-			name: "",
+			name: "one",
 			fields: fields{
-				Batch:  "1",
-				Table:  "test",
-				Uptime: "2020-02-03",
+				Batch:  "20201",
+				Name:   testname,
+				Uptime: one,
 			},
-			args: args{},
-			want: &Info{},
+		},
+		{
+			name: "two",
+			fields: fields{
+				Batch:  "20202",
+				Name:   testname,
+				Uptime: two,
+			},
+		},
+		{
+			name: "three",
+			fields: fields{
+				Batch:  "20203",
+				Name:   testname,
+				Uptime: three,
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			i := &Info{
 				Batch:  tt.fields.Batch,
-				Table:  tt.fields.Table,
+				Name:   tt.fields.Name,
 				Uptime: tt.fields.Uptime,
 			}
-			i.Insert()
-			if got := i.Search(tt.args.table); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Info.Search() = %v, want %v", got, tt.want)
+
+			if err := i.Insert(); (err != nil) != tt.wantErr {
+				t.Errorf("Info.Insert() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+
+	result := SearchLast(testname)
+	u := result.Uptime
+	if result.Uptime != three {
+		t.Errorf("Info.SearchLast() want = %v, get %v", u, three)
 	}
 }

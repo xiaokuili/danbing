@@ -5,10 +5,11 @@ import (
 	"danbing/cons"
 	"danbing/engine"
 	"danbing/job"
+	"time"
 )
 
-func ejob() *job.Job {
-	job := job.New("danbing")
+func streamJob() *job.Job {
+	job := job.New("danbing_stream_test")
 	c := make([]*conf.Column, 0)
 	c = append(c, &conf.Column{
 		Name: "out",
@@ -40,13 +41,16 @@ func ejob() *job.Job {
 		Thread:           10, // threat group数量
 	}
 	job.SetSpeed(speed)
+
+	job.SetStream()
 	return job
 }
 
-func Example_Engine_Report() {
-	job := ejob()
+func Example_Stream_Job() {
+	job := streamJob()
 	engine.Run(job)
-
+	time.Sleep(time.Second * 5)
+	engine.Run(job)
 	// Output:
 	// map[out:hello world]
 	// map[out:hello world]

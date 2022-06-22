@@ -40,8 +40,8 @@ type Speed struct {
 	BytePerChannel   int `json:"byte_per_channel"`
 	Record           int `json:"record"`
 	RecordPerChannel int `json:"record_per_channel"`
-	Channel          int `json:"channel"` // 拆分任务数量 = 总记录/每个任务数量(byte类似)
-	Thread           int `json:"thread"`  // 执行线程数
+	TaskRecordsNum   int `json:"task_records_num"` // 每个任务的数据条数，总任务数=总数量/每个任务数据数量
+	Thread           int `json:"thread"`           // 执行线程数
 
 }
 

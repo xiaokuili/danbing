@@ -45,7 +45,7 @@ func pgtostreamJob() *job.Job {
 		BytePerChannel:   0,
 		Record:           0,
 		RecordPerChannel: 0,
-		Channel:          10, // task 数量
+		TaskRecordsNum:   10, // task 数量
 		Thread:           10, // threat group数量
 	}
 	job.SetSpeed(speed)
@@ -74,7 +74,7 @@ func Example_PG2STREAM() {
 	defer runShell(c, "-f", "../docker/docker-compose.yml", "down")
 
 	job := pgtostreamJob()
-	engine.Engine(job)
+	engine.Run(job)
 
 	// Output:
 }

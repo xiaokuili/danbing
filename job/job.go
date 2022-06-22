@@ -8,11 +8,12 @@ import (
 )
 
 type Job struct {
-	Param []*conf.Param `json:"job"`
-	Speed *conf.Speed   `json:"speed"`
-	Table string
-	Name  string
-	Batch string
+	Param  []*conf.Param `json:"job"`
+	Speed  *conf.Speed   `json:"speed"`
+	Table  string
+	Name   string
+	Batch  string
+	Stream bool
 }
 
 func New(table string) *Job {
@@ -23,6 +24,9 @@ func New(table string) *Job {
 		Name:  table,
 		Batch: time.Now().Format(time.RFC3339),
 	}
+}
+func (j *Job) SetStream() {
+	j.Stream = true
 }
 
 func (j *Job) SetSpeed(s *conf.Speed) {

@@ -57,7 +57,7 @@ func (s *Scheduler) Split(genesis *taskgroup.Task) []*taskgroup.Task {
 	if !genesis.CheckTask() {
 		panic("please init task...")
 	}
-	reader := genesis.Reader.Split(s.Job.Speed.Channel)
+	reader := genesis.Reader.Split(s.Job.Speed.TaskRecordsNum)
 	writer := genesis.Writer.Split(len(reader))
 	tasks := s.mergeRW(reader, writer)
 	return tasks
