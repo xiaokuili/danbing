@@ -1,0 +1,33 @@
+name: danbing
+table: danbing
+reader:
+  name: pgsqlreader
+  count: 1
+  conn:
+    host: 127.0.0.1
+    port: 5432
+    user: postgres
+    password: postgres
+    db: postgres
+  query:
+    baseSQL: select count(*) from danbing where id='1'
+    where: uptime
+    primary: 
+writer:
+  name: streamwriter
+  conn:
+    host: 127.0.0.01
+    port: 9200
+    user: elastic
+    password: password
+    db: 
+  query:
+    baseSQL: 
+    where:   
+    primary: 
+      - id 
+speed: 
+  thread: 100
+  num_per_task: 100000 
+
+log: info
