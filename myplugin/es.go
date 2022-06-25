@@ -82,13 +82,11 @@ func toStr(i interface{}) string {
 	return ""
 }
 
-func CreateID(column []*conf.Column, data map[string]interface{}) string {
+func CreateID(column []string, data map[string]interface{}) string {
 	docID := ""
 	for i := 0; i < len(column); i++ {
-		c := column[i]
-		if c.PrimaryField {
-			docID = docID + toStr(data[c.Name])
-		}
+		f := column[i]
+		docID = docID + toStr(data[f])
 	}
 	if docID == "" {
 		panic("id不能为空")
@@ -110,7 +108,7 @@ func (writer *EsWriter) Writer(result []map[string]interface{}) {
 	start := time.Now().UTC()
 
 	for i := 0; i < len(result); i++ {
-		docID := CreateID(writer.Query.Columns, result[i])
+		docID := CreateID(writer.Query.Primary, result[i])
 		d, err := json.Marshal(result[i])
 		if err != nil {
 			panic(err)

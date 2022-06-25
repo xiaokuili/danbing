@@ -22,6 +22,8 @@ type Scheduler struct {
 	Total         int
 	wg            sync.WaitGroup
 	logger        log.Logger
+	Reader        plugin.ReaderPlugin
+	Writer        plugin.WriterPlugin
 }
 
 func New(job *job.Job, logger log.Logger) *Scheduler {
@@ -35,7 +37,7 @@ func New(job *job.Job, logger log.Logger) *Scheduler {
 	}
 }
 
-func (s *Scheduler) Init() *taskgroup.Task {
+func (s *Scheduler) Init() {
 	param := s.Job.Param
 	var reader plugin.ReaderPlugin
 	var writer plugin.WriterPlugin
@@ -44,23 +46,28 @@ func (s *Scheduler) Init() *taskgroup.Task {
 		switch p.Type {
 		case cons.PLUGINREADER:
 			reader = initReader(p)
+			s.Total = reader.Init(p.Query, p.Connect)
 		case cons.PLUGINWRITER:
 			writer = initWriter(p)
+			writer.Init(p.Query, p.Connect)
 		}
 	}
-	genesis := taskgroup.NewTask(-1, s.Table, reader, writer)
-	s.Total = reader.Count()
-	return genesis
+	s.Reader = reader
+	s.Writer = writer
+
 }
 
-func (s *Scheduler) Split(genesis *taskgroup.Task) []*taskgroup.Task {
-	if !genesis.CheckTask() {
-		panic("please init task...")
-	}
-	reader := genesis.Reader.Split(s.Job.Speed.TaskRecordsNum)
-	writer := genesis.Writer.Split(len(reader))
+func (s *Scheduler) Split() []*taskgroup.Task {
+
+	reader := s.Reader.Split(s.Job.Speed.NumPerTask)
+	writer := s.Writer.Split(len(reader))
 	tasks := s.mergeRW(reader, writer)
 	return tasks
+}
+
+func (s *Scheduler) Close() {
+	s.Reader.Close()
+	s.Writer.Close()
 }
 
 func (s *Scheduler) AssignTasks(tasks []*taskgroup.Task) {
@@ -84,19 +91,15 @@ func (s *Scheduler) Scheduler() {
 	s.logger.Debug("scheduler  end", []interface{}{"consume", consume}...)
 }
 
-func RunDebug(job *job.Job) {
-	run(job, log.MustNewDefaultLogger(log.LogFormatJSON, log.LogLevelDebug))
-}
-
-func Run(job *job.Job) {
-	run(job, log.MustNewDefaultLogger(log.LogFormatJSON, log.LogLevelInfo))
+func Run(job *job.Job, level string) {
+	run(job, log.MustNewDefaultLogger(log.LogFormatJSON, level))
 }
 
 func run(job *job.Job, logger log.Logger) {
 	t := time.Now()
 	s := New(job, logger)
-	genesis := s.Init()
-	tasks := s.Split(genesis)
+	s.Init()
+	tasks := s.Split()
 	s.AssignTasks(tasks)
 	go func(time.Time) {
 		for {
@@ -107,7 +110,7 @@ func run(job *job.Job, logger log.Logger) {
 
 	s.Scheduler()
 	s.Report(t)
-
+	s.Close()
 }
 
 func (s *Scheduler) Report(t time.Time) {
@@ -134,7 +137,7 @@ func initReader(p *conf.Param) plugin.ReaderPlugin {
 		panic("please check plugin is reader")
 	}
 	r := plugin.ReaderPlugins[p.Name]
-	r.Init(p.Query, p.Connect)
+
 	return r
 }
 
@@ -143,7 +146,7 @@ func initWriter(p *conf.Param) plugin.WriterPlugin {
 		panic("please check plugin is writer")
 	}
 	w := plugin.WriterPlugins[p.Name]
-	w.Init(p.Query, p.Connect)
+
 	return w
 }
 
@@ -151,12 +154,12 @@ func (s *Scheduler) mergeRW(r []plugin.ReaderPlugin, w []plugin.WriterPlugin) []
 	tasks := make([]*taskgroup.Task, 0)
 	for i := 0; i < len(r); i++ {
 		t := taskgroup.NewTask(i, s.Table, r[i], w[i])
-		rp, err := conf.ReaderParam(s.Job.Param)
+		rp, err := conf.Reader(s.Job.Param)
 		if err != nil {
 			panic("")
 		}
 		t.SetReaderParam(rp)
-		wp, err := conf.WriterParam(s.Job.Param)
+		wp, err := conf.Writer(s.Job.Param)
 		if err != nil {
 			panic("")
 		}
