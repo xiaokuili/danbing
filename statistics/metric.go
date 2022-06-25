@@ -26,12 +26,12 @@ var CollectCount []string = []string{
 }
 
 type Metric struct {
-	Counter    map[string]int
-	State      State
-	Throwable  string
-	Message    map[string]string
-	Timestamp  time.Time
-	sync.Mutex // 直接通过匿名调用
+	Counter   map[string]int
+	State     State
+	Throwable string
+	Message   map[string]string
+	Timestamp time.Time
+	sync.Mutex
 }
 
 func NewMetric() *Metric {

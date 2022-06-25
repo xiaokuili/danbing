@@ -5,26 +5,24 @@ import (
 	"fmt"
 )
 
-// 字段
-type Column struct {
-	Value        string `json:"value"`
-	Name         string `json:"name"`
-	WhereField   bool   `json:"where_field"`   // update
-	PrimaryField bool   `json:"primary_field"` // upsert
-
-	FieldStype string
+type Query struct {
+	BaseSQL string `json:"sql"`
+	Table   string `json:"table"`
+	Where   string
+	Primary []string
+	Begin   string
+	End     string
+	Count   int
 }
 
-type Query struct {
-	SQL       string `json:"sql"`
-	Size      int
-	Offset    int
-	Table     string    `json:"table"`
-	Columns   []*Column `json:"columns"`
-	Count     string
-	Update    bool
-	EndTime   string
-	BeginTime string
+func NewQuery(sql, t, w string, c int, p []string) *Query {
+	return &Query{
+		BaseSQL: sql,
+		Table:   t,
+		Where:   w,
+		Primary: p,
+		Count:   c,
+	}
 }
 
 type Connect struct {
@@ -35,14 +33,30 @@ type Connect struct {
 	Database string `json:"database"`
 }
 
-type Speed struct {
-	Byte             int `json:"byte"`
-	BytePerChannel   int `json:"byte_per_channel"`
-	Record           int `json:"record"`
-	RecordPerChannel int `json:"record_per_channel"`
-	TaskRecordsNum   int `json:"task_records_num"` // 每个任务的数据条数，总任务数=总数量/每个任务数据数量
-	Thread           int `json:"thread"`           // 执行线程数
+func NewConn(host string, port int, user, pass, db string) *Connect {
+	return &Connect{
+		Host:     host,
+		Port:     port,
+		Username: user,
+		Password: pass,
+		Database: db,
+	}
+}
 
+type Speed struct {
+	NumPerTask int `json:"num_per_task"` // 每个任务的数据条数，总任务数=总数量/每个任务数据数量
+	Thread     int `json:"thread"`       // 执行线程数
+
+}
+
+// NewSpeed need RecordPerTask and Thread
+// task num = total / RecordPerTask
+// then group by thread
+func NewSpeed(r, t int) *Speed {
+	return &Speed{
+		NumPerTask: r,
+		Thread:     t,
+	}
 }
 
 type Param struct {
@@ -52,22 +66,32 @@ type Param struct {
 	Type    string   `json:"type"` // reader type or writer type
 }
 
-func NewReader(name string) *Param {
+func NewReader(name string, conn *Connect, query *Query) *Param {
 	reader := &Param{
-		Connect: &Connect{},
-		Query:   &Query{},
+		Connect: conn,
+		Query:   query,
 		Name:    name,
 		Type:    cons.PLUGINREADER,
 	}
 	return reader
 }
 
-func (p *Param) SetConnect(c *Connect) {
-	p.Connect = c
+func NewWriter(name string, conn *Connect, query *Query) *Param {
+	reader := &Param{
+		Connect: conn,
+		Query:   query,
+		Name:    name,
+		Type:    cons.PLUGINWRITER,
+	}
+	return reader
 }
 
-func (p *Param) SetQuery(q *Query) {
-	p.Query = q
+func Reader(ps []*Param) (*Param, error) {
+	return getParam(ps, cons.PLUGINREADER)
+}
+
+func Writer(ps []*Param) (*Param, error) {
+	return getParam(ps, cons.PLUGINWRITER)
 }
 
 func getParam(ps []*Param, t string) (*Param, error) {
@@ -79,12 +103,4 @@ func getParam(ps []*Param, t string) (*Param, error) {
 		}
 	}
 	return nil, fmt.Errorf("not exist %s param ", t)
-}
-
-func ReaderParam(ps []*Param) (*Param, error) {
-	return getParam(ps, cons.PLUGINREADER)
-}
-
-func WriterParam(ps []*Param) (*Param, error) {
-	return getParam(ps, cons.PLUGINWRITER)
 }

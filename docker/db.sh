@@ -2,7 +2,7 @@
 
 
 search() {
-        docker exec -it docker_pg_1 /bin/bash -c  'psql -U postgres -h 127.0.0.1 -c "select * from danbing offset 0 limit 100;"'
+        docker exec -it docker_pg_1 /bin/bash -c  'psql -U postgres -h 127.0.0.1 -c "select * from danbing limit 1;"'
 
 } 
 

@@ -11,11 +11,10 @@ const (
 )
 
 type ReaderPlugin interface {
-	Init(*conf.Query, *conf.Connect)
 	Name() string
+	Init(*conf.Query, *conf.Connect) int
 	Split(taskNum int) []ReaderPlugin
 	Reader() []map[string]interface{}
-	Count() int
 	Close()
 }
 
