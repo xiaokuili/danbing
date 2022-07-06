@@ -45,10 +45,6 @@ const (
 	thread     = "speed.thread"
 	numPerTask = "speed.num_per_task"
 
-	project = "danbing"
-	dbPath  = "/app/danbing/file/danbing.db"
-	jobPath = "/app/danbing/file"
-
 	log = "log"
 )
 
@@ -65,7 +61,7 @@ func Ending() string {
 	return time.Now().Format(TimeFormat)
 }
 
-func Build(path string) *job.Job {
+func Build() *job.Job {
 
 	name := viper.GetString("name")
 	j := job.New(name)
@@ -135,31 +131,50 @@ func Run() {
 	}
 
 	t := viper.GetString("t")
-	switch t {
-	case "transform":
-		tranform()
-	case "check":
-		check()
-	}
+	run(t)
 
 }
 
-func tranform() {
-	file := db.New(dbPath)
-	job := Build(jobPath)
+func run(t string) {
+	// init db
+	path := viper.GetString("d")
+	file := db.New(path)
+	// init job
+	job := Build()
 
-	reader := job.Reader()
-	where := reader.Query.Where
-	b, e := BEGIN, End
-	if where != "" {
-		b = Begin(file, job)
-		e = Ending()
+	switch t {
+	case "transform":
+		reader := job.Reader()
+		where := reader.Query.Where
+		b, e := BEGIN, End
+		if where != "" {
+			b = Begin(file, job)
+			e = Ending()
+			reader.Query.Begin = b
+			reader.Query.End = e
+		}
+		defer close(b, e, job, file)
+	case "check":
+		reader := job.Reader()
+		where := reader.Query.Where
+		b, e, err := countBeginEnd(file, job)
+		if err != nil {
+			panic("")
+		}
+		if where == "" {
+			panic("")
+		}
+
 		reader.Query.Begin = b
 		reader.Query.End = e
+	default:
+		panic("please review run type")
 	}
 
 	scheduler.Run(job, viper.GetString(log))
+}
 
+func close(b, e string, job *job.Job, file *db.File) {
 	nb, err := time.ParseInLocation(TimeFormat, b, time.Local)
 	if err != nil {
 	}
@@ -184,24 +199,4 @@ func countBeginEnd(f *db.File, j *job.Job) (begin, end string, err error) {
 		return begin.Format(TimeFormat), end.Format(TimeFormat), nil
 	}
 	return "", "", errors.New("dont run this job")
-}
-
-func check() {
-	file := db.New(dbPath)
-	job := Build(jobPath)
-	reader := job.Reader()
-	where := reader.Query.Where
-	b, e, err := countBeginEnd(file, job)
-	if err != nil {
-		panic("")
-	}
-	if where == "" {
-		panic("")
-	}
-
-	reader.Query.Begin = b
-	reader.Query.End = e
-
-	scheduler.Run(job, viper.GetString(log))
-
 }
